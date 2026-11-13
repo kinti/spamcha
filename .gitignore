@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+#Datos privados: corpus real y modelo entrenado (nunca en un repo público)
+spamcha.json
+ham/
+spam/
+eval-ham/
+eval-spam/
+corpus/
