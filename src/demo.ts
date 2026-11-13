@@ -1,62 +1,76 @@
 #!/usr/bin/env node
-// spamcha demo: a complete contact server in one file, zero dependencies.
+// spamcha demo v0.4: contact server + quarantine review page, in one file.
 //   npm run demo   →  http://localhost:8787
-// Three forms to test the three gates:
-//   · a real human (fills at their own pace)  → pass, or quarantine by content
-//   · a bot POSTing straight at the handler   → stamp:missing
-//   · a bot that fills the honeypot           → honeypot:filled
+//   · /            three forms (human, bot without stamp, bot filling honeypot)
+//   · /submit      the full pipeline; quarantined submissions get stored
+//   · /revision    THE button: review held submissions, mark spam/ham →
+//                  the judge trains on the spot (visible in the model stats)
 // Page text in Spanish (native locale); verdicts are JSON, codes immutable.
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { issueStamp, verifySubmission } from './index.js';
-import { loadModel } from './storage.js';
-import { createModel } from './bayes.js';
-import { existsSync } from 'node:fs';
+import { createGatekeeper } from './guard.js';
 
 const PORT = Number(process.env.SPAMCHA_PORT ?? 8787);
 const SECRET = process.env.SPAMCHA_SECRET ?? 'demo: change this for a long random phrase of your own';
 const MODEL_PATH = process.env.SPAMCHA_MODEL ?? 'spamcha.json';
+const QUARANTINE_PATH = process.env.SPAMCHA_QUARANTINE ?? 'spamcha-quarantine.jsonl';
 
-const model = existsSync(MODEL_PATH) ? loadModel(MODEL_PATH) : createModel();
-console.log(`Model: ${MODEL_PATH} (docs spam=${model.docs.spam} ham=${model.docs.ham})`);
+const guard = createGatekeeper({
+  secret: SECRET,
+  modelPath: MODEL_PATH,
+  quarantinePath: QUARANTINE_PATH,
+  rateLimit: { max: 20, windowMs: 60_000 },
+});
+console.log(`Model: ${MODEL_PATH} (docs spam=${guard.model.docs.spam} ham=${guard.model.docs.ham})`);
+console.log(`Quarantine: ${QUARANTINE_PATH} (${guard.listQuarantine().length} pendiente(s))`);
 
-const PAGE = (body: string): string => `<!doctype html>
+const PAGINA = (cuerpo: string): string => `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>spamcha — demo</title>
 <style>
-  body{font-family:system-ui,sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem;line-height:1.5}
+  body{font-family:system-ui,sans-serif;max-width:680px;margin:2rem auto;padding:0 1rem;line-height:1.5}
   form{border:1px solid #ccc;border-radius:8px;padding:1rem;margin:1rem 0}
   input,textarea{width:100%;box-sizing:border-box;margin:.25rem 0 1rem;padding:.5rem}
-  button{padding:.5rem 1rem}
+  button{padding:.4rem .9rem;cursor:pointer}
   .etiqueta{font-weight:600}
-  pre{background:#f4f4f4;padding:.75rem;border-radius:6px;overflow-x:auto}
+  pre{background:#f4f4f4;padding:.75rem;border-radius:6px;overflow-x:auto;font-size:.85rem}
   .pass{color:#067d17}.quarantine{color:#b58600}.reject{color:#da1e28}
+  .entrada{border:1px solid #ddd;border-radius:6px;padding:.75rem;margin:.75rem 0}
+  .entrada .campos{color:#555;font-size:.9rem;white-space:pre-wrap}
+  .fila button{margin-right:.5rem}
+  nav a{margin-right:1rem}
 </style></head><body>
 <h1>spamcha — juez de spam local</h1>
-<p>Formulario de contacto con sello invisible, trampa de tiempo y honeypot. Sin captcha, sin JavaScript en el navegador, sin mandar tu contenido a la nube de nadie.</p>
-${body}
+<nav><a href="/">Formulario</a> · <a href="/revision">Revisión de cuarentena (${guard.listQuarantine().length})</a></nav>
+${cuerpo}
 </body></html>`;
 
-async function readBody(request: IncomingMessage): Promise<string> {
-  let data = '';
-  for await (const chunk of request) data += chunk;
-  return data;
+async function leerCuerpo(peticion: IncomingMessage): Promise<string> {
+  let datos = '';
+  for await (const trozo of peticion) datos += trozo;
+  return datos;
 }
 
-async function respond(response: ServerResponse, html: string, status = 200): Promise<void> {
-  response.writeHead(status, { 'content-type': 'text/html; charset=utf-8' });
-  response.end(PAGE(html));
+function camposDe(crudo: string): Record<string, string> {
+  const campos: Record<string, string> = {};
+  for (const [k, v] of new URLSearchParams(crudo)) campos[k] = v;
+  return campos;
 }
 
-const server = createServer(async (request, response) => {
-  const path = request.url?.split('?')[0] ?? '/';
+async function responder(salida: ServerResponse, html: string, codigo = 200): Promise<void> {
+  salida.writeHead(codigo, { 'content-type': 'text/html; charset=utf-8' });
+  salida.end(PAGINA(html));
+}
 
-  if (request.method === 'GET' && (path === '/' || path === '/contact')) {
-    const token = await issueStamp(SECRET);
-    const human = `<form method="post" action="/submit">
-<input type="hidden" name="spamcha" value="${token}">
-<input type="text" name="website" value="" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+const servidor = createServer(async (peticion, salida) => {
+  const ruta = peticion.url?.split('?')[0] ?? '/';
+
+  // ─── Formulario + bots simulados ───────────────────────────────────────────
+  if (peticion.method === 'GET' && (ruta === '/' || ruta === '/contact')) {
+    const sello = await guard.stampHtml();
+    const humano = `<form method="post" action="/submit">
+${sello}
 <label class="etiqueta" for="nombre">Tu nombre</label><input id="nombre" name="nombre">
 <label class="etiqueta" for="mensaje">Mensaje</label><textarea id="mensaje" name="mensaje" rows="5"></textarea>
 <button type="submit">Enviar (humano)</button></form>`;
@@ -69,27 +83,63 @@ const server = createServer(async (request, response) => {
 <legend>Simulación: bot que rellena la trampa</legend>
 <input type="hidden" name="website" value="http://trampa.xyz">
 <button type="submit">Enviar (bot con trampa rellena)</button></form>`;
-    await respond(response, human + bot1 + bot2);
+    await responder(salida, humano + bot1 + bot2);
     return;
   }
 
-  if (request.method === 'POST' && path === '/submit') {
-    const raw = await readBody(request);
-    const fields: Record<string, string> = {};
-    for (const [k, v] of new URLSearchParams(raw)) fields[k] = v;
-
-    const verdict = await verifySubmission(fields, model, { secret: SECRET });
-    const html = `<h2>Veredicto: <span class="${verdict.decision}">${verdict.decision}</span></h2>
-<pre>${JSON.stringify(verdict, null, 2)}</pre>
-<p><a href="/">← volver al formulario</a></p>`;
-    await respond(response, html);
+  // ─── Envío: el pipeline completo ──────────────────────────────────────────
+  if (peticion.method === 'POST' && ruta === '/submit') {
+    const campos = camposDe(await leerCuerpo(peticion));
+    const ip = peticion.socket.remoteAddress ?? undefined;
+    const veredicto = await guard.review(campos, { ip });
+    const nota = veredicto.decision === 'quarantine'
+      ? '<p>📌 Guardado en cuarentena: revísalo en <a href="/revision">Revisión</a> y enséñale al juez qué es.</p>'
+      : '';
+    const html = `<h2>Veredicto: <span class="${veredicto.decision}">${veredicto.decision}</span></h2>
+<pre>${JSON.stringify(veredicto, null, 2)}</pre>
+${nota}
+<p><a href="/">← volver</a></p>`;
+    await responder(salida, html);
     return;
   }
 
-  await respond(response, '<p>404</p>', 404);
+  // ─── Revisión de cuarentena: el botón "esto era mierda" ──────────────────
+  if (peticion.method === 'GET' && ruta === '/revision') {
+    const pendientes = guard.listQuarantine();
+    if (pendientes.length === 0) {
+      await responder(salida, '<p>Cuarentena vacía. Cuando el juez ponga algo en <span class="quarantine">quarantine</span>, aparecerá aquí para enseñarle qué es.</p>');
+      return;
+    }
+    const entradas = pendientes.map((e) => `<div class="entrada">
+<div class="campos">${new Date(e.receivedAt).toLocaleString('es')} · probabilidad ${e.probability.toFixed(2)} · fase ${e.phase}
+${Object.entries(e.fields).map(([k, v]) => `\n<b>${k}</b>: ${v}`).join('')}</div>
+<div class="fila">
+<form method="post" action="/revision" style="display:inline"><input type="hidden" name="id" value="${e.id}"><input type="hidden" name="accion" value="spam"><button type="submit">🗑 Es basura (entrenar spam)</button></form>
+<form method="post" action="/revision" style="display:inline"><input type="hidden" name="id" value="${e.id}"><input type="hidden" name="accion" value="ham"><button type="submit">✓ Es legítimo (entrenar ham)</button></form>
+<form method="post" action="/revision" style="display:inline"><input type="hidden" name="id" value="${e.id}"><input type="hidden" name="accion" value="borrar"><button type="submit">Borrar sin enseñar</button></form>
+</div></div>`).join('');
+    await responder(salida, `<h2>Cuarentena (${pendientes.length})</h2>
+<p>Marca cada envío: el juez entrena al momento y el modelo se guarda en ${MODEL_PATH}.</p>${entradas}`);
+    return;
+  }
+
+  if (peticion.method === 'POST' && ruta === '/revision') {
+    const campos = camposDe(await leerCuerpo(peticion));
+    const { id, accion } = campos;
+    if (typeof id === 'string' && (accion === 'spam' || accion === 'ham')) {
+      guard.resolveQuarantine(id, accion);
+    } else if (typeof id === 'string' && accion === 'borrar') {
+      guard.discardQuarantine(id);
+    }
+    salida.writeHead(303, { location: '/revision' });
+    salida.end();
+    return;
+  }
+
+  await responder(salida, '<p>404</p>', 404);
 });
 
-server.listen(PORT, () => {
+servidor.listen(PORT, () => {
   console.log(`spamcha demo at http://localhost:${PORT}`);
-  console.log('Tip: train first with `spamcha train` so the judge has a voice.');
+  console.log('Try: send the human form → /revision → mark it → watch the model learn.');
 });

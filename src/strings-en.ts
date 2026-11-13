@@ -38,6 +38,7 @@ export const stringsEn: Record<string, string> = {
   'honeypot:missing': 'Honeypot field missing: the form was never rendered',
   'stamp:valid': 'Valid stamp',
   'honeypot:empty': 'Honeypot empty',
+  'rate:limited': 'Too many submissions from that address: try again later',
 
   // Default-pack rule descriptions
   'rule.spam-words': 'Classic spam keywords',

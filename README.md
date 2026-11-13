@@ -128,7 +128,52 @@ const v = await verifyAltchaSolution(fields.altcha, SECRET);
 npm run demo   # → http://localhost:8787
 ```
 
-One page, three buttons: a real form (type slowly, submit → `pass`), a bot that POSTs without a stamp (`stamp:missing`), and a bot that fills the honeypot (`honeypot:filled`).
+Three buttons on one page: a real form (type slowly, submit → `pass`), a bot that POSTs without a stamp (`stamp:missing`), a bot that fills the honeypot (`honeypot:filled`) — plus **`/revision`**, the quarantine review page where the judge learns (below).
+
+## Install in 5 lines: the guard + middleware
+
+`createGatekeeper` is the installed product: one object owning the model (load-or-create, autosave), the quarantine store, the rate limiter and the stamp issuer.
+
+```ts
+import { createGatekeeper } from 'spamcha';
+
+const guard = createGatekeeper({
+  secret: process.env.SPAMCHA_SECRET,        // long random phrase
+  modelPath: './spamcha.json',               // your private model
+  quarantinePath: './spamcha-quarantine.jsonl',
+  rateLimit: { max: 10, windowMs: 60_000 },  // per-IP, in-memory
+});
+
+// GET /contact — the stamp, ready-made for the form:
+app.get('/contact', async (c) => c.html(`<form method="post" action="/submit">${await guard.stampHtml()}…`));
+
+// POST /submit — every framework field, straight through:
+const verdict = await guard.review(fields, { ip });
+```
+
+Prefer middleware? Both flavors included, zero framework imports:
+
+```ts
+import { middlewareExpress, middlewareHono } from 'spamcha';
+
+app.post('/submit', middlewareExpress(guard), (req, res) => { /* req.spamcha.verdict */ });
+app.post('/submit', middlewareHono(guard), (c) => { /* c.get('spamcha') */ });
+```
+
+Behavior: `reject` → the middleware answers 403 with the verdict JSON and your handler never runs; anything else flows through with the verdict attached. Next.js needs no adapter — call `guard.review()` in the route handler.
+
+## The feedback loop: the "this was garbage" button
+
+This is the part nobody else ships: the quarantined submissions get stored locally, the site owner reviews them, and **the judge trains on the spot**.
+
+```ts
+guard.listQuarantine();          // held submissions awaiting review
+guard.resolveQuarantine(id, 'spam'); // trains the live model + autosaves + clears
+guard.resolveQuarantine(id, 'ham');  // it was legit — that teaches too
+guard.discardQuarantine(id);         // delete without teaching
+```
+
+`npm run demo` includes a ready-made review page (`/revision`) with the three buttons — open it, mark a held submission as garbage, and watch the model stats change. Each site's corpus stays in its own JSONL file and its own model: your users' words never leave the server.
 
 ## How it decides
 
@@ -171,7 +216,7 @@ eval-spam/
 
 ```sh
 npm install
-npm test        # vitest, 72 tests
+npm test        # vitest, 92 tests
 npm run build   # tsc → dist/
 npm run demo    # local contact server on :8787
 ```

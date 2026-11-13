@@ -10,3 +10,4 @@ spam/
 eval-ham/
 eval-spam/
 corpus/
+spamcha-quarantine.jsonl

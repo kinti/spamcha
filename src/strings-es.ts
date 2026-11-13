@@ -38,6 +38,7 @@ export const stringsEs: Record<string, string> = {
   'honeypot:missing': 'Falta el campo trampa: nadie renderizó el formulario',
   'stamp:valid': 'Sello válido',
   'honeypot:empty': 'Trampa vacía',
+  'rate:limited': 'Demasiados envíos desde esa dirección: intenta más tarde',
 
   // Aviso: las descripciones EN ESPAÑOL de las reglas por defecto viven en el
   // pack (rules-es.ts, es dato del sitio editable). Aquí solo lo demás.

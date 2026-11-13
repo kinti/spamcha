@@ -32,8 +32,15 @@ export type {
 } from './stamp.js';
 export { verifySubmission } from './gatekeeper.js';
 export type { GatekeeperOptions, SubmissionVerdict } from './gatekeeper.js';
+export { createGatekeeper } from './guard.js';
+export type { Gatekeeper, GatekeeperConfig, ReviewMeta } from './guard.js';
+export { middlewareExpress, middlewareHono } from './adapters.js';
 export { verifyAltchaSolution } from './altcha.js';
 export type { AltchaOptions, AltchaPayload, AltchaVerification } from './altcha.js';
+export { QuarantineStore } from './quarantine.js';
+export type { QuarantineEntry } from './quarantine.js';
+export { createRateLimiter } from './rate-limit.js';
+export type { RateLimitOptions, RateLimiter } from './rate-limit.js';
 
 // Locales: Spanish native, English translated; codes immutable
 export { DEFAULT_LOCALE, isLocale, LOCALES, ruleText, stringsFor, translate } from './locales.js';
