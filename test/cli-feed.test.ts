@@ -30,7 +30,7 @@ afterAll(() => server.close());
 
 describe('feed CLI (HTTP real)', () => {
   it('keygen → sign → add → update → judge learns the channel rule', async () => {
-    await run(['feed', 'keygen', '--privada', PRIVATE, '--publica', PUBLIC]);
+    await run(['feed', 'keygen', '--private', PRIVATE, '--public', PUBLIC]);
 
     writeFileSync(
       CANAL,
@@ -45,16 +45,16 @@ describe('feed CLI (HTTP real)', () => {
       }),
       'utf8',
     );
-    const firmado = await run(['feed', 'sign', '--archivo', CANAL, '--privada', PRIVATE]);
-    expect(firmado).toContain('versión 1');
+    const signed = await run(['feed', 'sign', '--file', CANAL, '--private', PRIVATE]);
+    expect(signed).toContain('version 1');
 
-    await run(['feed', 'add', '--nombre', 'oficial', '--url', url, '--publica', PUBLIC, '--config', CONFIG]);
+    await run(['feed', 'add', '--name', 'oficial', '--url', url, '--public', PUBLIC, '--config', CONFIG]);
     const update = await run(['feed', 'update', '--config', CONFIG, '--dir', FEEDS_DIR]);
-    expect(update).toContain('versión 1');
-    expect(update).toContain('1 dominios');
+    expect(update).toContain('version 1');
+    expect(update).toContain('1 domains');
     expect(existsSync(join(FEEDS_DIR, 'oficial.json'))).toBe(true);
 
-    // el juez fusiona el feed: un dominio del canal cuarentena con razón trazable
+    // the judge fuses the feed: a channel domain quarantines with a traceable reason
     await run(['train', '--model', MODELO, '--spam', FIXTURES('spam'), '--ham', FIXTURES('ham')]);
     const salida = await run([
       'judge', '--model', MODELO, '--feeds-dir', FEEDS_DIR,
@@ -63,15 +63,15 @@ describe('feed CLI (HTTP real)', () => {
     expect(salida).toContain('feed:oficial/es:domains');
   }, 20_000);
 
-  it('a tampered channel gets FIRMA INVÁLIDA on update', async () => {
-    const crudo = JSON.parse(readFileSync(CANAL, 'utf8')) as { version: number; rules: { id: string }[] };
-    crudo.version += 1; // sin volver a firmar: la manipulación clásica
-    crudo.rules[0]!.id = 'regla-venenosa';
-    writeFileSync(CANAL, JSON.stringify(crudo), 'utf8');
+  it('a tampered channel gets INVALID SIGNATURE on update', async () => {
+    const raw = JSON.parse(readFileSync(CANAL, 'utf8')) as { version: number; rules: { id: string }[] };
+    raw.version += 1; // without re-signing: the classic tamper
+    raw.rules[0]!.id = 'poisoned-rule';
+    writeFileSync(CANAL, JSON.stringify(raw), 'utf8');
 
     const update = await run(['feed', 'update', '--config', CONFIG, '--dir', FEEDS_DIR]);
-    expect(update).toContain('FIRMA INVÁLIDA');
-    // y lo manipulado NUNCA entra en caché:
+    expect(update).toContain('INVALID SIGNATURE');
+    // and the tampered version NEVER reaches the cache:
     const cache = JSON.parse(readFileSync(join(FEEDS_DIR, 'oficial.json'), 'utf8')) as { version: number };
     expect(cache.version).toBe(1);
   }, 20_000);

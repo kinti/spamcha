@@ -108,7 +108,7 @@ export async function verifyFeed(
 const DOMAINS_WEIGHT = 5; // a curated domain quarantines alone (reviewable, never auto-reject)
 
 /** Turns a channel's domain list into one rule (escaped alternation, substring match). */
-function reglaDeDominios(nombreCanal: string, domains: string[]): Rule | null {
+function domainRule(nombreCanal: string, domains: string[]): Rule | null {
   const limpios = domains
     .map((d) => d.trim().toLowerCase().replace(/\.$/, ''))
     .filter((d) => d.length > 0 && /^[a-z0-9.-]+$/.test(d));
@@ -135,7 +135,7 @@ export function mergeFeedChannels(base: RulePack, channels: FeedChannel[]): Rule
     for (const rule of ch.rules) {
       rules.push({ ...rule, id: `feed:${nombre}:${rule.id}` });
     }
-    const dominios = reglaDeDominios(nombre, ch.domains ?? []);
+    const dominios = domainRule(nombre, ch.domains ?? []);
     if (dominios) rules.push(dominios);
   }
   return { name: base.name + (channels.length > 0 ? ` +${channels.length} feed(s)` : ''), rules };

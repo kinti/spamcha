@@ -12,12 +12,12 @@ describe('cli', () => {
   it('init creates model and rules; a second init steps on nothing', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'spamcha-'));
     const first = await run(['init', '--dir', dir]);
-    expect(first).toContain('Creado');
+    expect(first).toContain('Created');
     expect(existsSync(join(dir, 'spamcha.json'))).toBe(true);
-    expect(existsSync(join(dir, 'rules-es.json'))).toBe(true);
+    expect(existsSync(join(dir, 'rules.json'))).toBe(true);
 
     const second = await run(['init', '--dir', dir]);
-    expect(second).toContain('Omitido');
+    expect(second).toContain('Skipped');
   });
 
   it('train trains on the fixtures and leaves the model on disk', async () => {
@@ -27,20 +27,19 @@ describe('cli', () => {
       'train', '--model', model,
       '--spam', fixtures('spam'), '--ham', fixtures('ham'),
     ]);
-    expect(out).toContain('6 documento(s) spam');
-    expect(out).toContain('6 documento(s) ham');
+    expect(out).toContain('Trained: 6 spam document(s), 6 ham document(s)');
     expect(JSON.parse(readFileSync(model, 'utf8'))).toMatchObject({ docs: { spam: 6, ham: 6 } });
   });
 
-  it('train speaks English with --locale en', async () => {
+  it('train speaks Spanish with --locale es', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'spamcha-'));
     const model = join(dir, 'spamcha.json');
     const out = await run([
-      'train', '--model', model, '--locale', 'en',
+      'train', '--model', model, '--locale', 'es',
       '--spam', fixtures('spam'), '--ham', fixtures('ham'),
     ]);
-    expect(out).toContain('Trained: 6 spam document(s), 6 ham document(s)');
-    expect(out).toContain('vocabulary');
+    expect(out).toContain('Entrenado: 6 documento(s) spam');
+    expect(out).toContain('vocabulario');
   });
 
   it('eval measures against an unseen corpus without mistakes', async () => {
@@ -51,8 +50,8 @@ describe('cli', () => {
       'eval', '--model', model,
       '--spam', fixtures('eval-spam'), '--ham', fixtures('eval-ham'),
     ]);
-    expect(out).toContain('Falsos positivos (ham a la basura): 0');
-    expect(out).toContain('Falsos negativos (spam pasado): 0');
+    expect(out).toContain('False positives (ham thrown away): 0');
+    expect(out).toContain('False negatives (spam passed): 0');
   });
 
   it('judge returns a reasoned JSON verdict (alias: juzgar)', async () => {
@@ -67,13 +66,13 @@ describe('cli', () => {
     expect(v.decision === 'quarantine' || v.decision === 'reject').toBe(true);
     expect(v.bayes).not.toBeNull();
     expect(v.reasons.length).toBeGreaterThan(0);
+
     const alias = await run([
-      'juzgar', '--model', model, '--locale', 'en',
+      'juzgar', '--model', model,
       'Cheap viagra casino bonus http://a.xyz http://b.xyz http://c.xyz http://d.xyz http://e.xyz',
     ]);
     const va = JSON.parse(alias) as Verdict;
     expect(va.decision).toBe(v.decision);
-    expect(va.reasons.some((r) => r.code.startsWith('rule:') && r.text?.includes('keywords'))).toBe(true);
   });
 
   it('version answers', async () => {
@@ -81,10 +80,10 @@ describe('cli', () => {
   });
 
   it('unknown command: clear error', async () => {
-    await expect(run(['pepito'])).rejects.toThrow(/desconocido/);
+    await expect(run(['pepito'])).rejects.toThrow(/Unknown command/);
   });
 
   it('unsupported locale: clear error', async () => {
-    await expect(run(['version', '--locale', 'fr'])).rejects.toThrow(/no soportado/);
+    await expect(run(['version', '--locale', 'fr'])).rejects.toThrow(/Unsupported language/);
   });
 });

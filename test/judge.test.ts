@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createModel, train } from '../src/bayes.js';
 import { toFields, toText, judge, trainFields } from '../src/judge.js';
-import { defaultRulePack } from '../src/rules-es.js';
+import { defaultRulePack } from '../src/rules-default.js';
 import { tokenize } from '../src/tokenizer.js';
 import type { BayesModel } from '../src/bayes.js';
 
@@ -119,6 +119,6 @@ describe('judge', () => {
 
   it('the default pack ships built in', () => {
     expect(defaultRulePack.rules.length).toBeGreaterThanOrEqual(6);
-    expect(defaultRulePack.name).toBe('default-es');
+    expect(defaultRulePack.name).toBe('default');
   });
 });

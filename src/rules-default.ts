@@ -1,17 +1,17 @@
-// Default rule pack, tuned for Spanish-language contact forms.
-// Built to BOOTSTRAP (cold model): the rules carry the weight while the bayes
-// has no corpus. The site owner should edit this pack for THEIR site.
+// Default rule pack, tuned for Spanish-language contact forms (the patterns
+// match Spanish spam; the descriptions are English — Spanish translations live
+// in strings-es.ts under `rule.<id>`). Built to BOOTSTRAP (cold model): the
+// rules carry the weight while the bayes has no corpus. The site owner should
+// edit this pack for THEIR site.
 // Weight philosophy: a single rule rarely reaches quarantine (0.5);
 // two or three together do. Rejection demands serious cause.
-// Descriptions are written in Spanish (the native locale); English lives in
-// strings-en.ts under `rule.<id>`.
 
 import type { RulePack } from './types.js';
 
 const BAIT = 'viagra|cialis|casino|porn[oó]|escort|payday|crypto\\s*(?:wallet|invest|coin)|nft\\s*giveaway|seo\\s*services|backlinks|free\\s*money|loan\\s*offer|forex\\s*signals';
 
 export const defaultRulePack: RulePack = {
-  name: 'default-es',
+  name: 'default',
   rules: [
     {
       id: 'spam-words',
@@ -19,7 +19,7 @@ export const defaultRulePack: RulePack = {
       pattern: BAIT,
       threshold: 1,
       weight: 3,
-      description: 'Palabras típicas de spam',
+      description: 'Classic spam keywords',
     },
     {
       id: 'spam-words-heavy',
@@ -27,7 +27,7 @@ export const defaultRulePack: RulePack = {
       pattern: BAIT,
       threshold: 4,
       weight: 5,
-      description: 'Lluvia de palabras típicas de spam',
+      description: 'A flood of classic spam keywords',
     },
     {
       id: 'many-links',
@@ -35,7 +35,7 @@ export const defaultRulePack: RulePack = {
       pattern: 'https?://|www\\.',
       threshold: 5,
       weight: 3,
-      description: 'Más de 5 enlaces en el envío',
+      description: 'More than 5 links in a single submission',
     },
     {
       id: 'dense-links',
@@ -44,7 +44,7 @@ export const defaultRulePack: RulePack = {
       threshold: 4,
       minLength: 300,
       weight: 3,
-      description: 'Textos largos saturados de enlaces',
+      description: 'Long text saturated with links',
     },
     {
       id: 'injected-html',
@@ -52,7 +52,7 @@ export const defaultRulePack: RulePack = {
       pattern: '<a\\s+href|<iframe|<script',
       threshold: 1,
       weight: 3,
-      description: 'HTML incrustado en el texto',
+      description: 'HTML embedded in the text',
     },
     {
       id: 'bbcode',
@@ -60,7 +60,7 @@ export const defaultRulePack: RulePack = {
       pattern: '\\[(?:url|link)=',
       threshold: 1,
       weight: 3,
-      description: 'BBCode de foros incrustado',
+      description: 'Forum BBCode embedded',
     },
     {
       id: 'shouting',
@@ -69,7 +69,7 @@ export const defaultRulePack: RulePack = {
       threshold: 0.6,
       minLength: 30,
       weight: 2,
-      description: 'Gritos: la mayoría del texto en mayúsculas',
+      description: 'Shouting: most of the text is uppercase',
     },
     {
       id: 'foreign-alphabet',
@@ -78,7 +78,7 @@ export const defaultRulePack: RulePack = {
       threshold: 0.3,
       minLength: 20,
       weight: 3,
-      description: 'Gran parte del texto en un alfabeto ajeno al sitio',
+      description: 'Much of the text in a foreign alphabet',
     },
   ],
 };

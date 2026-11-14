@@ -14,7 +14,7 @@ import { trainFields } from './judge.js';
 import { VerdictLog } from './log.js';
 import { translate } from './locales.js';
 import type { Locale } from './locales.js';
-import { defaultRulePack } from './rules-es.js';
+import { defaultRulePack } from './rules-default.js';
 import { QuarantineStore } from './quarantine.js';
 import { createRateLimiter } from './rate-limit.js';
 import type { RateLimiter } from './rate-limit.js';

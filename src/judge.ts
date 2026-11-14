@@ -6,7 +6,7 @@
 import { probability, train } from './bayes.js';
 import type { BayesModel } from './bayes.js';
 import { evaluateRules } from './rules.js';
-import { defaultRulePack } from './rules-es.js';
+import { defaultRulePack } from './rules-default.js';
 import { tokenize } from './tokenizer.js';
 import type { Decision, Label, JudgeOptions, Reason, Verdict } from './types.js';
 

@@ -1,5 +1,7 @@
 # spamcha
 
+**En español:** [README.es.md](./README.es.md) — spamcha is born in English; Spanish ships as a first-class locale (`--locale es`).
+
 **The invisible antispam for web forms — local, trainable, zero runtime dependencies.** A signed render stamp + server-side time floor + honeypot + a local content judge (Bayesian + declarative rules). Your form content never leaves your server, and no human ever sees a challenge.
 
 The missing piece of the invisible antispam stack. Proof-of-work captchas (ALTCHA, Cap) stop cheap bots but judge *behavior*. Cloud judges (Akismet, Formspree, CleanTalk) judge *content* — but your visitors' text gets shipped to someone else's cloud. There is no maintained, trainable, 100% local content classifier for forms. In any language. This is that piece.
@@ -11,7 +13,7 @@ bot   → form → (no stamp | slop)            → judge → ✗ quarantine / r
 
 No human ever sees a challenge. No content ever leaves the box.
 
-**Idiomas / Languages:** `spamcha` es español-nativo — los textos que ve el dueño (CLI, veredictos) salen en español por defecto, y el inglés va incluido como traducción (`--locale en` o `SPAMCHA_LOCALE=en`). Los códigos del veredicto (`stamp:missing`, `rule:dense-links`…) son inmutables y nunca se traducen — el patrón de la directiva `lang xx describe` de SpamAssassin y del i18n de ALTCHA.
+**Idiomas / Languages:** `spamcha` is born in English — the API, CLI default and pack descriptions. Spanish ships as a first-class translation (`--locale es` or `SPAMCHA_LOCALE=es`), Spanish-language spam patterns included in the default pack. Verdict codes (`stamp:missing`, `rule:dense-links`…) are immutable and never translated — the pattern of SpamAssassin's `lang xx describe` directive and ALTCHA's i18n.
 
 ## Install
 
@@ -221,6 +223,8 @@ Two signals, fused:
 The fusion is deliberately asymmetric in one way: **the bayes earns its voice as its corpus grows** (full weight at ~50 documents per class). With a green corpus the rules decide; a naive model must never veto a rule that just saw six links. Cold start works rules-only, from minute zero.
 
 Bands: `probability ≥ 0.85 → reject`, `≥ 0.5 → quarantine`, else `pass`. Configurable.
+
+**Cold start works from minute zero — no training required to be useful.** The gates kill content-independent bots (a POST without a stamp needs zero spam knowledge to reject), the default rule pack catches typical slop, and a feed channel adds the guild's curated rules on day one. Training doesn't make it *work* — it makes it *yours*: measured on the eval corpus, the untrained rules-only judge caught everything the trained one did; what training adds is robustness to the variants your site specifically receives.
 
 ## What goes public, what stays private
 

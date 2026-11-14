@@ -7,7 +7,7 @@
 // your own auth (Cloudflare Access does nicely); it reads your private data.
 
 import type { Gatekeeper } from './guard.js';
-import { translate } from './locales.js';
+import { DEFAULT_LOCALE, translate } from './locales.js';
 import type { Locale } from './locales.js';
 import type { LogEntry } from './log.js';
 
@@ -37,12 +37,12 @@ export interface PanelOptions {
 }
 
 export function panelHtml(guard: Gatekeeper, options: PanelOptions = {}): string {
-  const locale = options.locale ?? 'es';
+  const locale = options.locale ?? DEFAULT_LOCALE;
   const t = (code: string, vars?: Record<string, string | number>): string => translate(code, { locale, vars });
   const accion = options.actionPath ?? '/revision';
   const entries: LogEntry[] = guard.log?.list() ?? [];
 
-  // ─── Cómputos ────────────────────────────────────────────────────────────
+  // ─── Computations ────────────────────────────────────────────────────────
   const conteo = { pass: 0, quarantine: 0, reject: 0 };
   const reglas = new Map<string, number>();
   const dominios = new Map<string, number>();

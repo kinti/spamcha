@@ -1,6 +1,6 @@
-// TRANSLATED string pack: English. spamcha is Spanish-native; this pack covers
-// CLI + signals + EN descriptions of the default pack's rules (keys `rule.<id>`;
-// the site's own custom descriptions always win).
+// NATIVE string pack: English. spamcha is born in English — this pack is the
+// source the CLI and verdicts speak by default. Spanish ships as a translation
+// (strings-es.ts). Codes are screws: they never get translated.
 
 export const stringsEn: Record<string, string> = {
   // CLI
@@ -34,7 +34,7 @@ export const stringsEn: Record<string, string> = {
   'cli.feed.firmado': 'Channel signed: {path} (version {version}, expires {expiresAt})',
   'cli.feed.added': 'Channel {nombre} added → {url}',
   'cli.feed.listed': '{nombre} → {url}{clave}',
-  'cli.feed.empty': 'No subscribed channels. Add one: spamcha feed add --nombre oficial-es --url …',
+  'cli.feed.empty': 'No subscribed channels. Add one: spamcha feed add --name oficial-es --url …',
   'cli.feed.updated': '{nombre}: version {version} ({rules} rules, {domains} domains)',
   'cli.feed.updated-caducado': '{nombre}: EXPIRED, skipped (expired {expiresAt})',
   'cli.feed.unchanged': '{nombre}: unchanged (version {version})',

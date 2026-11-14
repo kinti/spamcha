@@ -23,9 +23,9 @@ describe('panel', () => {
   it('renders empty without data but with the sections', () => {
     const { guard } = guardConPanel();
     const html = panelHtml(guard);
-    expect(html).toContain('Panel — qué ha llegado');
-    expect(html).toContain('Sin envíos todavía.');
-    expect(html).toContain('Cuarentena vacía.');
+    expect(html).toContain('Panel — what arrived');
+    expect(html).toContain('No submissions yet.');
+    expect(html).toContain('Quarantine is empty.');
   });
 
   it('shows the arrival: stats, codes and quarantined entries with buttons', async () => {
@@ -48,25 +48,36 @@ describe('panel', () => {
 
     const html = panelHtml(guard);
     expect(html).toContain('Total 2');
-    expect(html).toContain('últimas 24h: 2');
+    expect(html).toContain('last 24h: 2');
     expect(html).toContain('rule:spam-words');
     expect(html).toContain('rule:many-links');
-    expect(html).toContain('a.xyz'); // dominio visto en lo filtrado
-    expect(html).toContain('Es basura (entrenar spam)');
-    // el contenido del usuario se escapa (sin HTML crudo en el panel)
+    expect(html).toContain('a.xyz'); // a domain seen in filtered content
+    expect(html).toContain('It is garbage (train spam)');
+    // user content is escaped (no raw HTML in the panel)
     expect(html).not.toContain('<script>');
   });
 
-  it('speaks English when asked', () => {
+  it('speaks Spanish when asked', async () => {
     const { guard } = guardConPanel();
-    const html = panelHtml(guard, { locale: 'en' });
-    expect(html).toContain('Panel — what arrived');
-    expect(html).toContain('No submissions yet.');
+    const token = await guard.stampToken();
+    await guard.review(
+      {
+        nombre: 'Anna',
+        mensaje: 'aumente su posicion en google con backlinks premium http://a.xyz http://b.xyz http://c.xyz http://d.xyz http://e.xyz',
+        spamcha: token,
+        website: '',
+      },
+      { ip: '10.7.0.3', now: Date.now() + 4_000 },
+    );
+    const html = panelHtml(guard, { locale: 'es' });
+    expect(html).toContain('Panel — qué ha llegado');
+    expect(html).toContain('Total 1');
+    expect(html).toContain('Es basura (entrenar spam)');
   });
 
   it('no log configured: the panel still renders', () => {
     const dir = mkdtempSync(join(tmpdir(), 'spamcha-panel-'));
     const guard = createGatekeeper({ secret: SECRET, modelPath: join(dir, 'm.json') });
-    expect(panelHtml(guard)).toContain('Panel — qué ha llegado');
+    expect(panelHtml(guard)).toContain('Panel — what arrived');
   });
 });

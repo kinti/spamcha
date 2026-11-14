@@ -1,7 +1,9 @@
-// The locale system, following the guild's pattern (SpamAssassin `lang es
+// The locale system, following the guild's pattern (SpamAssassin `lang xx
 // describe`, ALTCHA i18n, gettext): immutable codes + per-locale string packs.
+// spamcha is born in ENGLISH — the API, the CLI default and the pack
+// descriptions. Spanish ships as a first-class translation (--locale es).
 // Resolution priority: the site pack's own text → locale pack → the code itself
-// (it never fails). Spanish is the native locale; English ships as translation.
+// (it never fails).
 
 import type { Rule } from './types.js';
 import { stringsEs } from './strings-es.js';
@@ -9,7 +11,7 @@ import { stringsEn } from './strings-en.js';
 
 export type Locale = 'es' | 'en';
 export const LOCALES: Locale[] = ['es', 'en'];
-export const DEFAULT_LOCALE: Locale = 'es';
+export const DEFAULT_LOCALE: Locale = 'en';
 
 const PACKS: Record<Locale, Record<string, string>> = { es: stringsEs, en: stringsEn };
 

@@ -1,6 +1,7 @@
-// NATIVE string pack: spamcha is born in Spanish. English ships as a
-// translation (strings-en.ts). Codes are screws: they never get translated.
-// Resolution priority: the site pack's own text → locale pack → code.
+// TRANSLATED string pack: Spanish. spamcha is born in English — this pack is
+// the Spanish voice (--locale es / SPAMCHA_LOCALE=es). Codes are screws: they
+// never get translated. Resolution priority: the site pack's own text → locale
+// pack → code.
 
 export const stringsEs: Record<string, string> = {
   // CLI
@@ -34,16 +35,16 @@ export const stringsEs: Record<string, string> = {
   'cli.feed.firmado': 'Canal firmado: {path} (versión {version}, caduca {expiresAt})',
   'cli.feed.added': 'Canal {nombre} añadido → {url}',
   'cli.feed.listed': '{nombre} → {url}{clave}',
-  'cli.feed.empty': 'Sin canales suscritos. Añade uno: spamcha feed add --nombre oficial-es --url …',
+  'cli.feed.empty': 'Sin canales suscritos. Añade uno: spamcha feed add --name oficial-es --url …',
   'cli.feed.updated-caducado': '{nombre}: CADUCADO, omitido (caducó {expiresAt})',
   'cli.feed.unchanged': '{nombre}: sin cambios (versión {version})',
   'cli.feed.bad-signature': '{nombre}: FIRMA INVÁLIDA — canal rechazado (¿clave equivocada o archivo manipulado?)',
   'cli.feed.skipped-expired': 'Feed caducado omitido: {channel}',
   'cli.feed.help':
     'Feeds — canales de inteligencia firmados:\n' +
-    '  spamcha feed keygen --privada k.b64 --publica k.pub.b64\n' +
-    '  spamcha feed sign --archivo feed.json --privada k.b64\n' +
-    '  spamcha feed add --nombre N --url URL [--publica k.pub.b64] [--config C]\n' +
+    '  spamcha feed keygen --private k.b64 --public k.pub.b64\n' +
+    '  spamcha feed sign --file feed.json --private k.b64\n' +
+    '  spamcha feed add --name N --url URL [--public k.pub.b64] [--config C]\n' +
     '  spamcha feed list [--config C]\n' +
     '  spamcha feed update [--config C] [--dir feeds/]',
   'cli.feed.updated': '{nombre}: versión {version} ({rules} reglas, {domains} dominios)',
@@ -81,6 +82,14 @@ export const stringsEs: Record<string, string> = {
   'honeypot:empty': 'Trampa vacía',
   'rate:limited': 'Demasiados envíos desde esa dirección: intenta más tarde',
 
-  // Aviso: las descripciones EN ESPAÑOL de las reglas por defecto viven en el
-  // pack (rules-es.ts, es dato del sitio editable). Aquí solo lo demás.
+  // SPANISH descriptions of the default pack's rules (rules-default.ts carries
+  // the English ones — site-editable data).
+  'rule.spam-words': 'Palabras típicas de spam',
+  'rule.spam-words-heavy': 'Lluvia de palabras típicas de spam',
+  'rule.many-links': 'Más de 5 enlaces en el envío',
+  'rule.dense-links': 'Textos largos saturados de enlaces',
+  'rule.injected-html': 'HTML incrustado en el texto',
+  'rule.bbcode': 'BBCode de foros incrustado',
+  'rule.shouting': 'Gritos: la mayoría del texto en mayúsculas',
+  'rule.foreign-alphabet': 'Gran parte del texto en un alfabeto ajeno al sitio',
 };

@@ -17,7 +17,7 @@ export { normalize, tokenize } from './tokenizer.js';
 export { createModel, probability, train } from './bayes.js';
 export type { BayesModel } from './bayes.js';
 export { evaluateRules } from './rules.js';
-export { defaultRulePack } from './rules-es.js';
+export { defaultRulePack } from './rules-default.js';
 export { judge, toFields, toText, trainFields } from './judge.js';
 export { loadModel, saveModel } from './storage.js';
 

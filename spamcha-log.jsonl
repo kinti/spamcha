@@ -1,2 +1,0 @@
-{"id":"kuedmHoSuOjhYqu7","receivedAt":"2026-11-14T00:06:43.660Z","decision":"quarantine","probability":0.6321205588285577,"phase":"cold","fields":{"nombre":"Anna SEO","mensaje":"backlinks premium para posicionamiento en google, visite http://a.xyz http://b.xyz http://c.xyz http://d.xyz http://e.xyz"},"codes":["stamp:valid","honeypot:empty","rule:spam-words","rule:many-links"]}
-{"id":"9T3CBEaMLeVNWCX8","receivedAt":"2026-11-14T00:06:43.667Z","decision":"reject","probability":1,"phase":"cold","fields":{"nombre":"bot","mensaje":"intento sin sello"},"codes":["stamp:missing"]}
