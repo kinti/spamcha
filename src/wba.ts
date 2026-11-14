@@ -79,6 +79,10 @@ export async function verifyWebBotAuth(
   if (!agent || !headers.signature || !headers['signature-input']) {
     return { ok: false, reason: 'wba:absent' };
   }
+  // SSRF guard: the directory fetch goes where the ATTACKER says — https only.
+  if (!agent.startsWith('https://')) {
+    return { ok: false, reason: 'wba:invalid' };
+  }
 
   const parsed = parseSignatureInput(headers['signature-input']);
   if (!parsed || !parsed.components.includes('@authority')) {

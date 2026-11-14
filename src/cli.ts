@@ -366,10 +366,14 @@ async function cmdServe(flags: Record<string, string | boolean>, locale: Locale)
   });
   const port = Number(flags['port'] ?? process.env.SPAMCHA_PORT ?? 8788);
   const host = pathOf(flags, 'host', '127.0.0.1'); // localhost by default: it reads private data
-  const server = createServeServer(guard, { cors: flags['cors'] === true });
+  const server = createServeServer(guard, { cors: flags['cors'] === true, trustProxy: flags['trust-proxy'] === true });
   await new Promise<void>((resolve) => server.listen(port, host, resolve));
+  const argvSecretNote = typeof flags['secret'] === 'string'
+    ? '  ⚠ secret passed as a CLI flag: visible in process lists — prefer SPAMCHA_SECRET env'
+    : '';
   return [
     `spamcha service listening on http://${host}:${port}`,
+    ...(argvSecretNote ? [argvSecretNote] : []),
     `  POST /verdict   fields (urlencoded) or {"fields":{…}} → verdict JSON`,
     `  GET  /stamp     ?format=html → hidden inputs for your form`,
     `  GET  /panel · GET|POST /revision · GET /feeds · GET /health`,

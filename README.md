@@ -295,6 +295,17 @@ Covers the Ed25519 / `@authority` profile of the draft; treat as experimental un
 
 - Public benchmark corpus (`spamcha-bench`), starter model, sector feed packs.
 
+
+### Security posture (what the audit enforces)
+
+- Stamps are **single-use**: a replayed nonce is rejected until the stamp expires (in-memory replay cache).
+- Fields are truncated before judging (`maxFieldLength`, default 20k chars) and request bodies capped (413 over ~256 KB) — no megabyte regex feasts.
+- Feed channels are external input even when signed: rules with nested quantifiers (the classic ReDoS shape), uncompilable patterns, unbounded weights or insane thresholds are **dropped at merge**.
+- web-bot-auth directories are fetched **https-only** (the agent URI comes from request headers — an SSRF vector otherwise).
+- Your private files (model, quarantine, verdict log) are written with mode **0600**.
+- The service binds to 127.0.0.1, review POSTs reject cross-site origins, and `feed add` pins the channel key by default.
+- Secrets: pass them via env (`SPAMCHA_SECRET`), not argv (process lists).
+
 ## Development
 
 ```sh

@@ -80,6 +80,17 @@ describe('web-bot-auth verifier (experimental)', () => {
     expect(v).toEqual({ ok: false, reason: 'wba:expired' });
   });
 
+  it('http:// agents are rejected (SSRF guard)', async () => {
+    const keys = await generateFeedKeyPair();
+    const { headers } = await buildHeaders(keys.private, { agent: 'http://interno.local' });
+    const v = await verifyWebBotAuth(headers, {
+      authority: AUTHORITY,
+      now: NOW,
+      fetchDirectory: async () => { throw new Error('NO DEBE LLEGAR A FETCH'); },
+    });
+    expect(v).toEqual({ ok: false, reason: 'wba:invalid' });
+  });
+
   it('absent headers → wba:absent', async () => {
     const keys = await generateFeedKeyPair();
     const v = await verifyWebBotAuth({}, {

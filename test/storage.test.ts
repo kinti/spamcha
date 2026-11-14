@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -18,6 +18,8 @@ describe('model storage', () => {
 
     const fresh = loadModel(path);
     expect(JSON.stringify(fresh)).toBe(JSON.stringify(m));
+    // contiene datos de usuarios: nada legible para group/other
+    expect(statSync(path).mode & 0o077).toBe(0);
   });
 
   it('rejects files that are not a model', () => {

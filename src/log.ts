@@ -36,7 +36,7 @@ export class VerdictLog {
       fields,
       codes,
     };
-    appendFileSync(this.path, JSON.stringify(entry) + '\n', 'utf8');
+    appendFileSync(this.path, JSON.stringify(entry) + '\n', { encoding: 'utf8', mode: 0o600 });
     this.rotate();
     return entry;
   }
@@ -63,6 +63,6 @@ export class VerdictLog {
   private rotate(): void {
     const entries = this.list();
     if (entries.length <= this.maxEntries) return;
-    writeFileSync(this.path, entries.slice(-this.maxEntries).map((e) => JSON.stringify(e)).join('\n') + '\n', 'utf8');
+    writeFileSync(this.path, entries.slice(-this.maxEntries).map((e) => JSON.stringify(e)).join('\n') + '\n', { encoding: 'utf8', mode: 0o600 });
   }
 }

@@ -28,7 +28,7 @@ export class QuarantineStore {
       probability: verdict.probability,
       phase: verdict.phase,
     };
-    appendFileSync(this.path, JSON.stringify(entry) + '\n', 'utf8');
+    appendFileSync(this.path, JSON.stringify(entry) + '\n', { encoding: 'utf8', mode: 0o600 });
     return entry;
   }
 
@@ -51,7 +51,7 @@ export class QuarantineStore {
     const entries = this.list();
     const rest = entries.filter((e) => e.id !== id);
     if (rest.length === entries.length) return false;
-    writeFileSync(this.path, rest.map((e) => JSON.stringify(e)).join('\n') + (rest.length > 0 ? '\n' : ''), 'utf8');
+    writeFileSync(this.path, rest.map((e) => JSON.stringify(e)).join('\n') + (rest.length > 0 ? '\n' : ''), { encoding: 'utf8', mode: 0o600 });
     return true;
   }
 }

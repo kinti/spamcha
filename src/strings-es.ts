@@ -77,6 +77,7 @@ export const stringsEs: Record<string, string> = {
   'stamp:missing': 'Nadie trajo el sello: POST directo al servidor sin renderizar el formulario',
   'stamp:invalid': 'El sello no es válido (firma o formato manipulados)',
   'stamp:expired': 'El sello ha caducado',
+  'stamp:replayed': 'Este sello ya se usó: los envíos son de un solo uso',
   'stamp:wrong-form': 'El sello pertenece a otro formulario',
   'time:too-fast': 'Respondió demasiado rápido para ser un humano',
   'honeypot:filled': 'El campo trampa viene relleno: el bot clásico de toda la vida',

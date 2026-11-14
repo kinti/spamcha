@@ -295,6 +295,17 @@ Cubre el perfil Ed25519 / `@authority` del draft; trátalo como experimental has
 
 - Corpus público de benchmark (`spamcha-bench`), modelo inicial, packs de feeds por sector.
 
+
+### Postura de seguridad (lo que la auditoría fuerza)
+
+- Los sellos son de **un solo uso**: un nonce repetido se rechaza hasta que el sello caduca (caché en memoria).
+- Los campos se truncan antes de juzgar (`maxFieldLength`, 20.000 por defecto) y los bodies se limitan (413 por encima de ~256 KB) — sin banquetes de regex.
+- Los canales de feed son entrada externa aunque estén firmados: las reglas con cuantificadores anidados (la forma clásica de ReDoS), patrones que no compilan, pesos sin techo o umbrales insanos **se descartan al fusionar**.
+- Los directorios web-bot-auth se descargan **solo por https** (la URI del agente viene en las cabeceras de la petición — vector SSRF si no).
+- Tus ficheros privados (modelo, cuarentena, log) se escriben con modo **0600**.
+- El servicio escucha en 127.0.0.1, los POST de revisión rechazan orígenes cruzados, y `feed add` fija la clave del canal por defecto.
+- Secretos: pásalos por entorno (`SPAMCHA_SECRET`), no por argv (se ven en las listas de procesos).
+
 ## Desarrollo
 
 ```sh

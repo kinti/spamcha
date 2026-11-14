@@ -51,7 +51,12 @@ export function judge(
   const bayesWeight = options.bayesWeight ?? 0.5;
   const minDocs = options.minDocs ?? MIN_DOCS_DEFAULT;
 
-  const fields = toFields(input);
+  const maxFieldLength = options.maxFieldLength ?? 20_000;
+  const rawFields = toFields(input);
+  const fields: Record<string, string> = {};
+  for (const [k, v] of Object.entries(rawFields)) {
+    fields[k] = v.length > maxFieldLength ? v.slice(0, maxFieldLength) : v;
+  }
   const tokens = tokenize(toText(fields));
   const reasons: Reason[] = [];
 

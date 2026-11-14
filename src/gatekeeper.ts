@@ -40,6 +40,11 @@ export interface GatekeeperOptions extends JudgeOptions {
    * content. `authority` defaults to the request's Host header.
    */
   webBotAuth?: { authority?: string; maxAgeSeconds?: number; fetchDirectory?: (url: string) => Promise<unknown> };
+  /** Replay cache: seen stamp nonces get rejected until their stamp expires.
+   *  The guard provides its in-memory map; without it stamps are reusable. */
+  replayCache?: Map<string, number>;
+  /** Truncate each field to this many characters before judging (DoS bound). */
+  maxFieldLength?: number;
 }
 
 export interface SubmissionVerdict extends Verdict {
@@ -112,6 +117,20 @@ export async function verifySubmission(
     } satisfies VerifyStampOptions);
     if (!stampCheck.ok) {
       return quickReject({ code: stampCheck.reason, text: voice(stampCheck.reason) });
+    }
+    // Gate 2½: replay. The nonce is random but reusable until the stamp expires —
+    // a replay cache turns the stamp into single-use while it lives.
+    if (options.replayCache) {
+      const nonce = stampCheck.payload.n;
+      const cache = options.replayCache;
+      const nowMs = options.now ?? Date.now();
+      for (const [seen, expiry] of cache) {
+        if (nowMs >= expiry) cache.delete(seen);
+      }
+      if (cache.has(nonce)) {
+        return quickReject({ code: 'stamp:replayed', text: voice('stamp:replayed') });
+      }
+      cache.set(nonce, stampCheck.payload.e);
     }
     signals.push({ code: 'stamp:valid', text: voice('stamp:valid') });
 

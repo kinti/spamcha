@@ -40,6 +40,10 @@ export interface GatekeeperConfig extends GatekeeperOptions {
   feedsDir?: string;
   /** Verdict log JSONL: every submission's outcome, for the panel. */
   logPath?: string;
+  /** Single-use stamps (default true): replayed nonces get rejected in-memory. */
+  singleUseStamps?: boolean;
+  /** Truncate each field before judging (default 20.000 chars). */
+  maxFieldLength?: number;
   /** Log rotation: keep only the newest N entries (default 1.000). */
   logMaxEntries?: number;
 }
@@ -67,6 +71,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
     model = loadModel(config.modelPath);
   }
 
+  const replayCache = new Map<string, number>();
   const quarantine = config.quarantinePath ? new QuarantineStore(config.quarantinePath) : null;
   const log = config.logPath ? new VerdictLog(config.logPath, config.logMaxEntries ?? 1_000) : null;
   const limiter: RateLimiter | null = config.rateLimit ? createRateLimiter(config.rateLimit) : null;
@@ -126,7 +131,13 @@ export function createGatekeeper(config: GatekeeperConfig) {
         };
       }
 
-      const verdict = await verifySubmission(fields, model, { ...config, rulePack: effectivePack, now: meta.now }, { headers: meta.headers });
+      const verdict = await verifySubmission(fields, model, {
+    ...config,
+    rulePack: effectivePack,
+    now: meta.now,
+    replayCache: config.singleUseStamps === false ? undefined : replayCache,
+    maxFieldLength: config.maxFieldLength ?? 20_000,
+  }, { headers: meta.headers });
       if (verdict.decision === 'quarantine' && quarantine) {
         quarantine.add(stripOwnFields(fields), verdict);
       }

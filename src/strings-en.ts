@@ -76,6 +76,7 @@ export const stringsEn: Record<string, string> = {
   'stamp:missing': 'No stamp was attached: POST straight at the server without rendering the form',
   'stamp:invalid': 'The stamp is not valid (tampered signature or format)',
   'stamp:expired': 'The stamp has expired',
+  'stamp:replayed': 'This stamp was already used: submissions are single-use',
   'stamp:wrong-form': 'The stamp belongs to a different form',
   'time:too-fast': 'Submitted too fast to be a human',
   'honeypot:filled': 'The honeypot field is filled: a classic bot',

@@ -21,7 +21,13 @@ export interface ServeOptions {
   actionPath?: string;
   /** Access-Control-Allow-Origin: * on API routes — for static-site clients. */
   cors?: boolean;
+  /** Trust X-Forwarded-For for rate limiting (default false — header spoofing). */
+  trustProxy?: boolean;
+  /** Request body cap in bytes (default 256.000 → 413 over it). */
+  maxBodyBytes?: number;
 }
+
+const DEFAULT_BODY_CAP = 256_000;
 
 function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -39,10 +45,30 @@ const PAGE = (body: string): string => `<!doctype html>
   .row button{margin-right:.5rem}
 </style></head><body>${body}</body></html>`;
 
-async function readBody(request: IncomingMessage): Promise<string> {
+async function readBody(request: IncomingMessage, maxBytes = DEFAULT_BODY_CAP): Promise<string> {
   let data = '';
-  for await (const chunk of request) data += chunk;
+  let bytes = 0;
+  for await (const chunk of request) {
+    bytes += chunk.length;
+    if (bytes > maxBytes) {
+      throw Object.assign(new Error('body too large'), { tooLarge: true });
+    }
+    data += chunk;
+  }
   return data;
+}
+
+/** Cross-site browser POSTs carry Origin; curl-style clients don't. A
+ *  mismatched Origin on a mutating route is CSRF — reject it. */
+function sameOrigin(request: IncomingMessage): boolean {
+  const origin = request.headers.origin;
+  if (origin === undefined) return true; // non-browser client
+  const host = request.headers.host ?? '';
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 }
 
 function fieldsFrom(raw: string): Record<string, string> {
@@ -60,6 +86,11 @@ function sendJson(response: ServerResponse, status: number, body: unknown, cors?
 function sendHtml(response: ServerResponse, status: number, body: string): void {
   response.writeHead(status, { 'content-type': 'text/html; charset=utf-8' });
   response.end(body);
+}
+
+function clientIp(request: IncomingMessage, options: ServeOptions): string | undefined {
+  if (options.trustProxy) return (request.headers['x-forwarded-for'] as string) ?? request.socket.remoteAddress ?? undefined;
+  return request.socket.remoteAddress ?? undefined;
 }
 
 export function createServeServer(guard: Gatekeeper, options: ServeOptions = {}): import('node:http').Server {
@@ -104,7 +135,14 @@ export function createServeServer(guard: Gatekeeper, options: ServeOptions = {})
     }
 
     if (request.method === 'POST' && path === '/verdict') {
-      const raw = await readBody(request);
+      let raw: string;
+      try {
+        raw = await readBody(request, options.maxBodyBytes ?? DEFAULT_BODY_CAP);
+      } catch (e) {
+        sendJson(response, (e as { tooLarge?: boolean }).tooLarge ? 413 : 400,
+          { error: 'body too large' }, options.cors);
+        return;
+      }
       const contentType = request.headers['content-type'] ?? '';
       let fields: Record<string, string> = {};
       let ip: string | undefined = request.headers['x-forwarded-for'] as string | undefined;
@@ -122,7 +160,7 @@ export function createServeServer(guard: Gatekeeper, options: ServeOptions = {})
       } else {
         fields = fieldsFrom(raw);
       }
-      const verdict = await guard.review(fields, { ip, now });
+      const verdict = await guard.review(fields, { ip: clientIp(request, options), now });
       sendJson(response, 200, verdict, options.cors);
       return;
     }
@@ -149,14 +187,20 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
     }
 
     if (request.method === 'POST' && path === actionPath) {
-      const fields = fieldsFrom(await readBody(request));
+      // Mutating route: reject cross-site form POSTs (CSRF).
+      if (!sameOrigin(request)) {
+        sendJson(response, 403, { error: 'cross-origin request rejected' }, options.cors);
+        return;
+      }
+      const fields = fieldsFrom(await readBody(request, options.maxBodyBytes ?? DEFAULT_BODY_CAP));
       const { id, accion } = fields;
       if (typeof id === 'string' && (accion === 'spam' || accion === 'ham')) {
         guard.resolveQuarantine(id, accion);
       } else if (typeof id === 'string') {
         guard.discardQuarantine(id);
       }
-      response.writeHead(303, { location: request.headers.referer ?? '/panel' });
+      // fixed target: the Referer header is attacker-controlled (open redirect)
+      response.writeHead(303, { location: '/panel' });
       response.end();
       return;
     }

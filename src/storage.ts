@@ -8,7 +8,7 @@ import type { BayesModel } from './bayes.js';
 
 export function saveModel(model: BayesModel, path: string): void {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(model, null, 2), 'utf8');
+  writeFileSync(path, JSON.stringify(model, null, 2), { encoding: 'utf8', mode: 0o600 });
 }
 
 export function loadModel(path: string): BayesModel {

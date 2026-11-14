@@ -90,4 +90,32 @@ describe('spamcha serve', () => {
   it('404 for unknown paths', async () => {
     expect((await fetch(`${BASE}/nope`)).status).toBe(404);
   });
+
+  it('oversized bodies get 413', async () => {
+    const grande = 'x'.repeat(300_000);
+    const res = await fetch(`${BASE}/verdict`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: `mensaje=${grande}`,
+    });
+    expect(res.status).toBe(413);
+  });
+
+  it('cross-site /revision POSTs (CSRF) get 403', async () => {
+    const res = await fetch(`${BASE}/revision`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'https://malo.example' },
+      body: 'id=x&accion=spam',
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('same-origin and curl-style (no Origin) POSTs are allowed', async () => {
+    const res = await fetch(`${BASE}/revision`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', origin: `http://127.0.0.1:${PORT}` },
+      body: 'id=x&accion=spam',
+    });
+    expect([303, 200]).toContain(res.status);
+  });
 });

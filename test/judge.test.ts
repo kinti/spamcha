@@ -117,6 +117,16 @@ describe('judge', () => {
     expect(m.docs.spam).toBe(1);
   });
 
+  it('maxFieldLength bounds each field before judging (DoS cap)', () => {
+    const m = createModel();
+    const largo = 'hola que tal '.repeat(2_000) + ' viagra casino'; // chivo fuera del límite
+    const v = judge(largo, m, { maxFieldLength: 200 });
+    expect(v.rules).toBe(0); // lo truncado no se juzga
+    expect(v.meta.tokens).toBeLessThanOrEqual(60);
+    const corto = judge('viagra casino', m, { maxFieldLength: 200 });
+    expect(corto.rules).toBeGreaterThanOrEqual(3);
+  });
+
   it('the default pack ships built in', () => {
     expect(defaultRulePack.rules.length).toBeGreaterThanOrEqual(6);
     expect(defaultRulePack.name).toBe('default');

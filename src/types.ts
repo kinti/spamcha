@@ -52,6 +52,8 @@ export interface JudgeOptions {
   minDocs?: number;
   /** Locale for the human-facing texts of the verdict (default `es`). */
   locale?: 'es' | 'en';
+  /** Truncate each field to this many characters before judging (DoS bound). */
+  maxFieldLength?: number;
 }
 
 /** One declarative rule of a pack. Three types, all regex-based: */

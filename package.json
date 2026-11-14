@@ -1,6 +1,6 @@
 {
   "name": "spamcha",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Juez de spam local para formularios web — Bayes + reglas declarativas, cero dependencias de runtime, tu contenido nunca sale de tu servidor",
   "type": "module",
   "license": "MIT",

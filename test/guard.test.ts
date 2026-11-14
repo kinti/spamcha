@@ -91,18 +91,46 @@ describe('createGatekeeper', () => {
     expect(guard.model.docs.spam + guard.model.docs.ham).toBe(docsAntes);
   });
 
-  it('the rate limiter answers with a synthetic verdict', async () => {
+  it('a replayed stamp (same nonce twice) gets rejected', async () => {
     const { guard } = guardDePrueba();
     const token = await guard.stampToken();
     const campos = { mensaje: 'hola', spamcha: token, website: '' };
+    const primero = await guard.review(campos, { ip: '10.8.8.1', now: Date.now() + 4_000 });
+    expect(primero.decision).toBe('pass');
+    const repetido = await guard.review(campos, { ip: '10.8.8.1', now: Date.now() + 5_000 });
+    expect(repetido.decision).toBe('reject');
+    expect(repetido.signals[0]?.code).toBe('stamp:replayed');
+    // un sello FRESCO del mismo formulario sigue funcionando
+    const token2 = await guard.stampToken();
+    const deNuevo = await guard.review(
+      { mensaje: 'hola', spamcha: token2, website: '' },
+      { ip: '10.8.8.1', now: Date.now() + 6_000 },
+    );
+    expect(deNuevo.decision).toBe('pass');
+  });
+
+  it('the rate limiter answers with a synthetic verdict', async () => {
+    const { guard } = guardDePrueba();
     for (let i = 0; i < 3; i++) {
-      await guard.review(campos, { ip: '10.9.9.9', now: Date.now() + 4_000 });
+      const token = await guard.stampToken(); // fresh stamp: replay gate stays out of the way
+      await guard.review(
+        { mensaje: 'hola', spamcha: token, website: '' },
+        { ip: '10.9.9.9', now: Date.now() + 4_000 },
+      );
     }
-    const v = await guard.review(campos, { ip: '10.9.9.9', now: Date.now() + 4_000 });
+    const token4 = await guard.stampToken();
+    const v = await guard.review(
+      { mensaje: 'hola', spamcha: token4, website: '' },
+      { ip: '10.9.9.9', now: Date.now() + 4_000 },
+    );
     expect(v.decision).toBe('reject');
     expect(v.signals[0]?.code).toBe('rate:limited');
     // otra IP, sin problema
-    const otra = await guard.review(campos, { ip: '10.9.9.8', now: Date.now() + 4_000 });
+    const token5 = await guard.stampToken();
+    const otra = await guard.review(
+      { mensaje: 'hola', spamcha: token5, website: '' },
+      { ip: '10.9.9.8', now: Date.now() + 4_000 },
+    );
     expect(otra.decision).not.toBe('reject');
   });
 

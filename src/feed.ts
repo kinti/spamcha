@@ -121,6 +121,9 @@ function safeRule(channelName: string, raw: Rule): Rule | null {
   if (!type) return null;
   const threshold = Number(raw.threshold);
   if (!Number.isFinite(threshold) || threshold <= 0) return null;
+  // ReDoS guard: a quantifier immediately before `)` (nested quantifiers like
+  // (a+)+) is the classic catastrophic-backtracking shape. Compile check too.
+  if (/[+*}]\s*\)/.test(raw.pattern)) return null;
   try {
     new RegExp(raw.pattern, raw.flags ?? 'gu'); // must compile, or the judge would throw per submission
   } catch {
