@@ -14,3 +14,4 @@ spamcha-quarantine.jsonl
 .claves/
 *.priv.b64
 spamcha.feeds.json
+*.private.b64
