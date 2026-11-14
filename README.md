@@ -198,6 +198,19 @@ Then `judge`, `eval` and the guard fuse the channels automatically (`--feeds-dir
 
 A quarantine reason always says who sent the rule: `rule:feed:oficial/es:seo-slop-es`.
 
+## The panel: what arrived, at a glance
+
+Trust needs eyes. With `logPath` configured, the guard records **every** submission's outcome (pass, quarantine, reject — rotated, newest kept), and `panelHtml` renders it: totals, last-24h, model state, most-active rules, spam domains seen, the latest submissions with their codes, and the quarantine review buttons inline.
+
+```ts
+const guard = createGatekeeper({ secret, logPath: './spamcha-log.jsonl' });
+
+// Any server, any framework — one call returns the whole page:
+app.get('/panel', (c) => c.html(panelHtml(guard)));
+```
+
+Zero JavaScript, server-rendered, XSS-escaped. **Security note: the panel reads your private data and has no built-in auth — serve it on localhost or behind your own auth** (Cloudflare Access fits naturally).
+
 ## How it decides
 
 Two signals, fused:
@@ -222,6 +235,8 @@ Add to your `.gitignore` on any site that trains:
 
 ```
 spamcha.json
+spamcha-quarantine.jsonl
+spamcha-log.jsonl
 ham/
 spam/
 eval-ham/
@@ -239,7 +254,7 @@ eval-spam/
 
 ```sh
 npm install
-npm test        # vitest, 103 tests
+npm test        # vitest, 110 tests
 npm run build   # tsc → dist/
 npm run demo    # local contact server on :8787
 ```

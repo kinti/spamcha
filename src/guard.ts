@@ -11,6 +11,7 @@ import type { BayesModel } from './bayes.js';
 import { mergeFeedChannels } from './feed.js';
 import type { FeedChannel } from './feed.js';
 import { trainFields } from './judge.js';
+import { VerdictLog } from './log.js';
 import { translate } from './locales.js';
 import type { Locale } from './locales.js';
 import { defaultRulePack } from './rules-es.js';
@@ -38,6 +39,10 @@ export interface GatekeeperConfig extends GatekeeperOptions {
    * already verified at download time against the pinned key.
    */
   feedsDir?: string;
+  /** Verdict log JSONL: every submission's outcome, for the panel. */
+  logPath?: string;
+  /** Log rotation: keep only the newest N entries (default 1.000). */
+  logMaxEntries?: number;
 }
 
 export interface ReviewMeta {
@@ -76,6 +81,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
   }
 
   const quarantine = config.quarantinePath ? new QuarantineStore(config.quarantinePath) : null;
+  const log = config.logPath ? new VerdictLog(config.logPath, config.logMaxEntries ?? 1_000) : null;
   const limiter: RateLimiter | null = config.rateLimit ? createRateLimiter(config.rateLimit) : null;
 
   /** Base pack (site's own, or the default) fused with downloaded feed channels. */
@@ -96,6 +102,9 @@ export function createGatekeeper(config: GatekeeperConfig) {
   return {
     /** The live model (mutations via resolveQuarantine mutate this object). */
     model,
+
+    /** The verdict log, if logPath was configured (the panel feeds on this). */
+    log,
 
     /** Issues the stamp to embed in the form at render time. */
     stampToken(): Promise<string> {
@@ -129,6 +138,13 @@ export function createGatekeeper(config: GatekeeperConfig) {
       const verdict = await verifySubmission(fields, model, { ...config, rulePack: effectivePack, now: meta.now });
       if (verdict.decision === 'quarantine' && quarantine) {
         quarantine.add(stripOwnFields(fields), verdict);
+      }
+      if (log) {
+        const codes = [
+          ...verdict.signals.map((s) => s.code),
+          ...verdict.reasons.filter((r) => r.code.startsWith('rule:')).map((r) => r.code),
+        ];
+        log.add(stripOwnFields(fields), verdict, codes);
       }
       return verdict;
     },

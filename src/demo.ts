@@ -9,20 +9,24 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createGatekeeper } from './guard.js';
+import { panelHtml } from './panel.js';
 
 const PORT = Number(process.env.SPAMCHA_PORT ?? 8787);
 const SECRET = process.env.SPAMCHA_SECRET ?? 'demo: change this for a long random phrase of your own';
 const MODEL_PATH = process.env.SPAMCHA_MODEL ?? 'spamcha.json';
 const QUARANTINE_PATH = process.env.SPAMCHA_QUARANTINE ?? 'spamcha-quarantine.jsonl';
+const LOG_PATH = process.env.SPAMCHA_LOG ?? 'spamcha-log.jsonl';
 
 const guard = createGatekeeper({
   secret: SECRET,
   modelPath: MODEL_PATH,
   quarantinePath: QUARANTINE_PATH,
+  logPath: LOG_PATH,
   rateLimit: { max: 20, windowMs: 60_000 },
 });
 console.log(`Model: ${MODEL_PATH} (docs spam=${guard.model.docs.spam} ham=${guard.model.docs.ham})`);
 console.log(`Quarantine: ${QUARANTINE_PATH} (${guard.listQuarantine().length} pendiente(s))`);
+console.log(`Log: ${LOG_PATH} (${guard.log?.list().length ?? 0} envíos)`);
 
 const PAGINA = (cuerpo: string): string => `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
@@ -42,7 +46,7 @@ const PAGINA = (cuerpo: string): string => `<!doctype html>
   nav a{margin-right:1rem}
 </style></head><body>
 <h1>spamcha — juez de spam local</h1>
-<nav><a href="/">Formulario</a> · <a href="/revision">Revisión de cuarentena (${guard.listQuarantine().length})</a></nav>
+<nav><a href="/">Formulario</a> · <a href="/panel">Panel</a> · <a href="/revision">Revisión (${guard.listQuarantine().length})</a></nav>
 ${cuerpo}
 </body></html>`;
 
@@ -100,6 +104,12 @@ ${sello}
 ${nota}
 <p><a href="/">← volver</a></p>`;
     await responder(salida, html);
+    return;
+  }
+
+  // ─── Panel: qué ha llegado, estadísticas y revisión ──────────────────────
+  if (peticion.method === 'GET' && ruta === '/panel') {
+    await responder(salida, panelHtml(guard));
     return;
   }
 

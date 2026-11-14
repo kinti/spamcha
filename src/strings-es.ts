@@ -35,7 +35,6 @@ export const stringsEs: Record<string, string> = {
   'cli.feed.added': 'Canal {nombre} añadido → {url}',
   'cli.feed.listed': '{nombre} → {url}{clave}',
   'cli.feed.empty': 'Sin canales suscritos. Añade uno: spamcha feed add --nombre oficial-es --url …',
-  'cli.feed.updated': '{nombre}: versión {version} ({rules} reglas, {domains} dominios)',
   'cli.feed.updated-caducado': '{nombre}: CADUCADO, omitido (caducó {expiresAt})',
   'cli.feed.unchanged': '{nombre}: sin cambios (versión {version})',
   'cli.feed.bad-signature': '{nombre}: FIRMA INVÁLIDA — canal rechazado (¿clave equivocada o archivo manipulado?)',
@@ -47,6 +46,28 @@ export const stringsEs: Record<string, string> = {
     '  spamcha feed add --nombre N --url URL [--publica k.pub.b64] [--config C]\n' +
     '  spamcha feed list [--config C]\n' +
     '  spamcha feed update [--config C] [--dir feeds/]',
+  'cli.feed.updated': '{nombre}: versión {version} ({rules} reglas, {domains} dominios)',
+
+  // Panel
+  'panel.title': 'Panel — qué ha llegado',
+  'panel.stats': 'Total {total} · paso {pass} · cuarentena {quarantine} · rechazo {reject} · últimas 24h: {horas24}',
+  'panel.model': 'Modelo: spam={spam} ham={ham} · vocabulario {vocabulary} · fase {phase}',
+  'panel.pending': 'Cuarentena pendiente: {n}',
+  'panel.top-rules': 'Reglas más activas',
+  'panel.top-domains': 'Dominios vistos en lo filtrado',
+  'panel.none': 'Todavía nada.',
+  'panel.quarantine-title': 'Cuarentena — enséñale al juez',
+  'panel.quarantine-empty': 'Cuarentena vacía.',
+  'panel.btn-spam': '🗑 Es basura (entrenar spam)',
+  'panel.btn-ham': '✓ Es legítimo (entrenar ham)',
+  'panel.btn-delete': 'Borrar sin enseñar',
+  'panel.recent': 'Últimos envíos',
+  'panel.empty': 'Sin envíos todavía.',
+  'panel.th-time': 'Cuándo',
+  'panel.th-decision': 'Veredicto',
+  'panel.th-prob': 'Prob.',
+  'panel.th-content': 'Contenido',
+  'panel.th-codes': 'Códigos',
 
   // Silent signals (what the site owner reads in the verdict)
   'stamp:missing': 'Nadie trajo el sello: POST directo al servidor sin renderizar el formulario',

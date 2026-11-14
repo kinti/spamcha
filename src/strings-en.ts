@@ -48,6 +48,27 @@ export const stringsEn: Record<string, string> = {
     '  spamcha feed list [--config C]\n' +
     '  spamcha feed update [--config C] [--dir feeds/]',
 
+  // Panel
+  'panel.title': 'Panel — what arrived',
+  'panel.stats': 'Total {total} · pass {pass} · quarantine {quarantine} · reject {reject} · last 24h: {horas24}',
+  'panel.model': 'Model: spam={spam} ham={ham} · vocabulary {vocabulary} · phase {phase}',
+  'panel.pending': 'Quarantine pending: {n}',
+  'panel.top-rules': 'Most active rules',
+  'panel.top-domains': 'Domains seen in filtered content',
+  'panel.none': 'Nothing yet.',
+  'panel.quarantine-title': 'Quarantine — teach the judge',
+  'panel.quarantine-empty': 'Quarantine is empty.',
+  'panel.btn-spam': '🗑 It is garbage (train spam)',
+  'panel.btn-ham': '✓ It is legit (train ham)',
+  'panel.btn-delete': 'Delete without teaching',
+  'panel.recent': 'Latest submissions',
+  'panel.empty': 'No submissions yet.',
+  'panel.th-time': 'When',
+  'panel.th-decision': 'Verdict',
+  'panel.th-prob': 'Prob.',
+  'panel.th-content': 'Content',
+  'panel.th-codes': 'Codes',
+
   // Silent signals
   'stamp:missing': 'No stamp was attached: POST straight at the server without rendering the form',
   'stamp:invalid': 'The stamp is not valid (tampered signature or format)',
