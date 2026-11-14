@@ -236,11 +236,15 @@ spamcha is designed so that **human intervention is optional at every level**:
   sharpen the per-site bayes. Optional, not required.
 - **Level 2: never needed:** sector feed packs and tuning exist for those who want them.
 
-The verdict JSON carries `confirmToken` / `confirmUrl` for quarantined submissions: the
-site puts the link on its thank-you page or its own mail; `GET /confirm?token=…` confirms
-and delivers. Confirming delivers without training: a spammer with a monitored mailbox
-could confirm their pitch, so the ham judgment stays with the operator (who can also
-train from any message with one click).
+The verdict JSON carries `confirmToken` / `confirmUrl` plus a 6-digit `confirmCode` for
+quarantined submissions. Two routes, both resilient to mail scanners (scanners auto-click
+links; a code has to be typed by hand):
+- **Link** (`GET /confirm?token=…`): the site puts it on its thank-you page. One click.
+- **Code** (`GET /confirm?code=123456`): the site emails the code with its own mail
+  (WordPress `wp_mail`, for example) and the sender types it back.
+Confirming delivers without training: a spammer with a monitored mailbox could confirm
+their pitch, so the ham judgment stays with the operator (who can also train from any
+message with one click). Three wrong codes lock that entry.
 ## How it decides
 
 Two signals, fused:

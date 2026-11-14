@@ -237,11 +237,15 @@ spamcha está diseñado para que **la intervención humana sea opcional en todos
 - **Nivel 2: nunca necesario:** los packs por sector y el ajuste fino existen para
   quien los quiera.
 
-El veredicto JSON lleva `confirmToken` / `confirmUrl` para los envíos retenidos: el sitio
-pone el enlace en su página de gracias o en su propio correo; `GET /confirm?token=…`
-confirma y entrega. Confirmar entrega sin entrenar: un spammer con buzón monitorizado
-podría confirmar su oferta, así que el juicio de ham se queda en el operador (que también
-puede entrenar desde cualquier mensaje con un clic).
+El veredicto JSON lleva `confirmToken` / `confirmUrl` y un `confirmCode` de 6 cifras para
+los envíos retenidos. Dos rutas, ambas a prueba de escáneres de correo (los escáneres
+hacen clic en enlaces; un código hay que teclearlo):
+- **Enlace** (`GET /confirm?token=…`): el sitio lo pone en su página de gracias. Un clic.
+- **Código** (`GET /confirm?code=123456`): el sitio manda el código con su propio correo
+  (WordPress `wp_mail`, por ejemplo) y el remitente lo teclea.
+Confirmar entrega sin entrenar: un spammer con buzón monitorizado podría confirmar su
+oferta, así que el juicio de ham se queda en el operador (que también puede entrenar
+desde cualquier mensaje con un clic). Tres códigos erróneos bloquean esa entrada.
 ## Cómo decide
 
 Dos señales, fusionadas:
