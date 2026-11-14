@@ -53,6 +53,9 @@ export interface GatekeeperConfig extends GatekeeperOptions {
    *  presumed spam (default 7). The confirmation is the double-opt-in click
    *  that removes the human from the loop. */
   confirmTtlDays?: number;
+  /** Webhook on every quarantine (mail digests, chats, automations).
+   *  Failures are swallowed: a broken notification never changes a verdict. */
+  notify?: (event: { fields: Record<string, string>; verdict: SubmissionVerdict; confirmToken?: string }) => void | Promise<void>;
   /** Weak-train clean passes as ham automatically. OFF by default: unknown
    *  spam can also pass on day 0, and training it as ham poisons the corpus.
    *  Enable once you trust the rules+feeds to catch most incoming slop. */
@@ -163,6 +166,12 @@ export function createGatekeeper(config: GatekeeperConfig) {
         // La confirmación ENTREGA el mensaje; no entrena (poisoning vector).
         confirmToken = randomBase64Url(24);
         quarantine.add(stripOwnFields(fields), verdict, confirmToken);
+        if (config.notify) {
+          // fire-and-forget: una notificacion rota jamas cambia un veredicto
+          void Promise.resolve(
+            config.notify({ fields: stripOwnFields(fields), verdict: { ...verdict, confirmToken }, confirmToken }),
+          ).catch(() => {});
+        }
       }
       if (verdict.decision === 'quarantine') {
         (verdict as SubmissionVerdict).confirmToken = confirmToken;

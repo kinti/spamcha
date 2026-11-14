@@ -378,10 +378,22 @@ async function cmdServe(flags: Record<string, string | boolean>, locale: Locale)
   stampField = (typeof flags['stamp-field'] === 'string' ? flags['stamp-field'] : stampField) || undefined;
   honeypotField = (typeof flags['honeypot-field'] === 'string' ? flags['honeypot-field'] : honeypotField) || undefined;
 
+  const notifyUrl = pathOf(flags, 'notify-url', '') || undefined;
   const guard = createGatekeeper({
     secret,
     stampField,
     honeypotField,
+    notify: notifyUrl
+      ? (event) => {
+          // webhook fail-open: si el receptor cae, el veredicto no cambia
+          fetch(notifyUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(event),
+            signal: AbortSignal.timeout(3_000),
+          }).catch(() => {});
+        }
+      : undefined,
     modelPath: pathOf(flags, 'model', DEFAULT_MODEL),
     quarantinePath: pathOf(flags, 'quarantine', 'spamcha-quarantine.jsonl'),
     logPath: pathOf(flags, 'log', 'spamcha-log.jsonl'),
@@ -406,6 +418,7 @@ async function cmdServe(flags: Record<string, string | boolean>, locale: Locale)
     `  GET  /stamp     ?format=html → hidden inputs for your form`,
     `  GET  /panel · GET|POST /revision · GET /feeds · GET /health`,
     `  model: docs spam=${guard.model.docs.spam} ham=${guard.model.docs.ham} · quarantine ${guard.listQuarantine().length} pending`,
+    ...(notifyUrl ? [`  notify webhook: ${notifyUrl}`] : []),
     '  (Ctrl-C to stop)',
   ].join('\n');
 }

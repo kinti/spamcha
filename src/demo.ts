@@ -75,6 +75,7 @@ async function respond(response: ServerResponse, html: string, status = 200): Pr
 
 const server = createServer(async (request, response) => {
   const path = request.url?.split('?')[0] ?? '/';
+  const query = new URLSearchParams(request.url?.split('?')[1] ?? '');
 
   // ─── Form + simulated bots ──────────────────────────────────────────────
   if (request.method === 'GET' && (path === '/' || path === '/contact')) {
@@ -102,14 +103,31 @@ ${stamp}
     const fields = fieldsFrom(await readBody(request));
     const ip = request.socket.remoteAddress ?? undefined;
     const verdict = await guard.review(fields, { ip });
-    const note = verdict.decision === 'quarantine'
-      ? '<p>📌 Held in quarantine: review it at <a href="/panel">Panel</a> and teach the judge what it is.</p>'
-      : '';
+    let note = '';
+    if (verdict.decision === 'quarantine') {
+      const confirmLink = verdict.confirmToken
+        ? ` <a href="/confirm?token=${verdict.confirmToken}">Confirm this message</a> — the sender proves it was them and it gets delivered.`
+        : '';
+      note = `<div class="nota">📌 Held in quarantine: review it at <a href="/panel">Panel</a> and teach the judge what it is.${confirmLink}</div>`;
+    }
     const html = `<div class="veredicto">Verdict: <span class="${verdict.decision}">${verdict.decision.toUpperCase()}</span></div>
 <pre>${esc(JSON.stringify(verdict, null, 2))}</pre>
 ${note}
 <p><a href="/">← back</a></p>`;
     await respond(response, html);
+    return;
+  }
+
+  // ─── Confirm: the sender's one-click "it was me" (double opt-in) ────────
+  if (request.method === 'GET' && path === '/confirm') {
+    const token = query.get('token') ?? '';
+    const entry = guard.confirmSubmission(token);
+    if (entry) {
+      await respond(response, `<div class="veredicto pass">✓ Message confirmed and delivered</div>
+<p>Gracias — tu mensaje ya está en manos del destinatario (sección Confirmados del panel).</p><p><a href="/">← back</a></p>`);
+    } else {
+      await respond(response, '<div class="veredicto reject">✗ Invalid or expired confirmation link</div><p><a href="/">← back</a></p>', 404);
+    }
     return;
   }
 

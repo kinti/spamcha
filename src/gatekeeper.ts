@@ -45,6 +45,19 @@ export interface GatekeeperOptions extends JudgeOptions {
   replayCache?: Map<string, number>;
   /** Truncate each field to this many characters before judging (DoS bound). */
   maxFieldLength?: number;
+  /** Fires when a submission is held in quarantine (webhook for owner
+   *  notification: mail digests, chats, automations). Failures are swallowed:
+   *  a broken notification never changes a verdict. */
+  notify?: (event: QuarantineNotification) => void | Promise<void>;
+}
+
+export interface QuarantineNotification {
+  /** The judged fields (stamp and honeypot stripped out). */
+  fields: Record<string, string>;
+  verdict: SubmissionVerdict;
+  /** The confirmation token, so the notification can carry a one-click
+   *  "this was me, deliver it" link for the sender. */
+  confirmToken?: string;
 }
 
 export interface SubmissionVerdict extends Verdict {
