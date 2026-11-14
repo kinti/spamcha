@@ -2,7 +2,8 @@
 
 **English:** [README.md](./README.md): spamcha nace en inglés (API, CLI por defecto); el español va incluido como locale de primera clase (`--locale es` o `SPAMCHA_LOCALE=es`).
 
-**El antispam invisible para formularios web: local, entrenable, cero dependencias de runtime.** Un sello firmado al renderizar + suelo de tiempo en el servidor + honeypot + un juez de contenido local (bayesiano + reglas declarativas). El contenido de tus formularios nunca sale de tu servidor, y ningún ser humano ve nunca un desafío.
+**El antispam invisible para formularios web: local, entrenable, cero dependencias de runtime.**
+**El captcha después, no antes.** Un sello firmado al renderizar + suelo de tiempo en el servidor + honeypot + un juez de contenido local (bayesiano + reglas declarativas). El contenido de tus formularios nunca sale de tu servidor, y ningún ser humano ve nunca un desafío.
 
 La pieza que faltaba en la pila antispam invisible. Los captchas de proof-of-work (ALTCHA, Cap) paran bots baratos pero juzgan *comportamiento*. Los jueces en la nube (Akismet, Formspree, CleanTalk) juzgan *contenido*: pero el texto de tus visitantes viaja a la nube de otro. ALTCHA Sentinel ofrece ya clasificación autoalojada como plataforma comercial ([docs del classifier](https://altcha.org/docs/sentinel/features/classifier)): merece compararse. Lo que faltaba era un juez entrenable como **librería MIT incrustable**: cinco líneas, cero dependencias, veredictos explicables entrenados con tus propios clics. Esta es esa pieza.
 

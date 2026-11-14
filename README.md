@@ -2,7 +2,8 @@
 
 **En español:** [README.es.md](./README.es.md): spamcha is born in English; Spanish ships as a first-class locale (`--locale es`).
 
-**The invisible antispam for web forms: local, trainable, zero runtime dependencies.** A signed render stamp + server-side time floor + honeypot + a local content judge (Bayesian + declarative rules). Your form content never leaves your server, and no human ever sees a challenge.
+**The invisible antispam for web forms: local, trainable, zero runtime dependencies.**
+**The captcha after, not before: humans never see it, bots pay for it.** A signed render stamp + server-side time floor + honeypot + a local content judge (Bayesian + declarative rules). Your form content never leaves your server, and no human ever sees a challenge.
 
 The missing piece of the invisible antispam stack. Proof-of-work captchas (ALTCHA, Cap) stop cheap bots but judge *behavior*. Cloud judges (Akismet, Formspree, CleanTalk) judge *content*: but your visitors' text gets shipped to someone else's cloud. ALTCHA's paid Sentinel platform now ships self-hosted content classification too ([classifier docs](https://altcha.org/docs/sentinel/features/classifier)): worth comparing. What it doesn't ship is a trainable content judge as a **small MIT-licensed library you embed**: five lines, zero dependencies, explainable verdicts, trained by your own clicks. This is that piece.
 
