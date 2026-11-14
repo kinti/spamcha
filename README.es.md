@@ -306,6 +306,17 @@ Cubre el perfil Ed25519 / `@authority` del draft; trátalo como experimental has
 - El servicio escucha en 127.0.0.1, los POST de revisión rechazan orígenes cruzados, y `feed add` fija la clave del canal por defecto.
 - Secretos: pásalos por entorno (`SPAMCHA_SECRET`), no por argv (se ven en las listas de procesos).
 
+### Modo stealth: cero huellas en tu HTML
+
+Una granja de bots publica evasiones para la config POPULAR, no para tu sitio. Las únicas
+dos cadenas que un bot ve en tu HTML son el campo sello y el campo trampa — así que
+`spamcha init` genera **nombres aleatorios por sitio** para ambos (`spamcha.config.json`,
+auto-cargado por `spamcha serve`, sobreescribible con `--stamp-field` / `--honeypot-field`).
+El honeypot recibe un nombre *creíble* de un pool (`empresa37`, `company_website42`…)
+para que los bots tontos lo rellenen con ganas. Esto no es la seguridad en sí — el sello
+sigue siendo HMAC y el código es público — es convertir cada web en un target a medida
+en vez de una receta.
+
 ## Desarrollo
 
 ```sh

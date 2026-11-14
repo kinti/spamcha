@@ -306,6 +306,16 @@ Covers the Ed25519 / `@authority` profile of the draft; treat as experimental un
 - The service binds to 127.0.0.1, review POSTs reject cross-site origins, and `feed add` pins the channel key by default.
 - Secrets: pass them via env (`SPAMCHA_SECRET`), not argv (process lists).
 
+### Stealth mode: no fingerprints in your HTML
+
+A bot farm ships evasions for the POPULAR config, not for your site. The only two
+strings a bot can see in your form HTML are the stamp field and the honeypot field —
+so `spamcha init` generates **random per-site names** for both (`spamcha.config.json`,
+auto-loaded by `spamcha serve`, overridable with `--stamp-field` / `--honeypot-field`).
+The honeypot gets a *plausible* name from a pool (`empresa37`, `company_website42`…)
+so dumb bots fill it eagerly. This is not the security itself — the stamp is still HMAC
+and the code is public — it's making every site a custom target instead of a recipe.
+
 ## Development
 
 ```sh

@@ -40,6 +40,8 @@ export { VerdictLog } from './log.js';
 export type { LogEntry } from './log.js';
 export { panelHtml } from './panel.js';
 export type { PanelOptions } from './panel.js';
+export { generateStealthNames, isStealthName } from './stealth.js';
+export type { StealthNames } from './stealth.js';
 export { middlewareExpress, middlewareHono } from './adapters.js';
 export { verifyAltchaSolution } from './altcha.js';
 export type { AltchaOptions, AltchaPayload, AltchaVerification } from './altcha.js';

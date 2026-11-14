@@ -15,6 +15,7 @@ import { generateFeedKeyPair, mergeFeedChannels, signFeed, verifyFeed } from './
 import type { FeedChannel } from './feed.js';
 import { judge, trainFields } from './judge.js';
 import { isLocale, DEFAULT_LOCALE, translate } from './locales.js';
+import { generateStealthNames } from './stealth.js';
 import type { Locale } from './locales.js';
 import { loadModel, saveModel } from './storage.js';
 import { defaultRulePack } from './rules-default.js';
@@ -25,6 +26,7 @@ const DEFAULT_MODEL = 'spamcha.json';
 const DEFAULT_RULES_FILE = 'rules.json';
 const DEFAULT_FEEDS_CONFIG = 'spamcha.feeds.json';
 const DEFAULT_FEEDS_DIR = 'feeds';
+const DEFAULT_STEALTH_CONFIG = 'spamcha.config.json';
 
 interface FileEntry {
   path: string;
@@ -255,6 +257,7 @@ async function cmdInit(flags: Record<string, string | boolean>, locale: Locale):
   const dir = pathOf(flags, 'dir', '.');
   const modelPath = join(dir, DEFAULT_MODEL);
   const rulesPath = join(dir, DEFAULT_RULES_FILE);
+  const configPath = join(dir, DEFAULT_STEALTH_CONFIG);
   const lines: string[] = [];
   if (existsSync(modelPath)) {
     lines.push(t('cli.init.skipped', { path: modelPath }));
@@ -267,6 +270,18 @@ async function cmdInit(flags: Record<string, string | boolean>, locale: Locale):
   } else {
     writeFileSync(rulesPath, JSON.stringify(defaultRulePack, null, 2), 'utf8');
     lines.push(t('cli.init.created', { path: rulesPath }));
+  }
+  // Stealth names: the two strings a bot can see in your HTML, random per site.
+  const stealthPath = join(dir, DEFAULT_STEALTH_CONFIG);
+  if (existsSync(stealthPath)) {
+    lines.push(t('cli.init.skipped', { path: stealthPath }));
+  } else {
+    const stealth = flags['no-stealth'] === true
+      ? { stampField: 'spamcha', honeypotField: 'website' }
+      : generateStealthNames();
+    writeFileSync(stealthPath, JSON.stringify(stealth, null, 2) + '\n', 'utf8');
+    lines.push(t('cli.init.created', { path: stealthPath }));
+    lines.push(`  stampField: ${stealth.stampField} · honeypotField: ${stealth.honeypotField}`);
   }
   lines.push('');
   lines.push(t('cli.init.next'));
@@ -352,8 +367,21 @@ async function cmdJudge(flags: Record<string, string | boolean>, positional: str
 async function cmdServe(flags: Record<string, string | boolean>, locale: Locale): Promise<string> {
   const secret = typeof flags['secret'] === 'string' ? flags['secret'] : process.env.SPAMCHA_SECRET;
   if (!secret) throw new Error('serve needs a secret: --secret "…" or SPAMCHA_SECRET env');
+  let stampField: string | undefined;
+  let honeypotField: string | undefined;
+  const stealthPath = join(pathOf(flags, 'dir', '.'), DEFAULT_STEALTH_CONFIG);
+  if (existsSync(stealthPath)) {
+    const stealth = JSON.parse(readFileSync(stealthPath, 'utf8')) as { stampField?: string; honeypotField?: string };
+    stampField = stealth.stampField;
+    honeypotField = stealth.honeypotField;
+  }
+  stampField = (typeof flags['stamp-field'] === 'string' ? flags['stamp-field'] : stampField) || undefined;
+  honeypotField = (typeof flags['honeypot-field'] === 'string' ? flags['honeypot-field'] : honeypotField) || undefined;
+
   const guard = createGatekeeper({
     secret,
+    stampField,
+    honeypotField,
     modelPath: pathOf(flags, 'model', DEFAULT_MODEL),
     quarantinePath: pathOf(flags, 'quarantine', 'spamcha-quarantine.jsonl'),
     logPath: pathOf(flags, 'log', 'spamcha-log.jsonl'),

@@ -15,6 +15,8 @@ describe('cli', () => {
     expect(first).toContain('Created');
     expect(existsSync(join(dir, 'spamcha.json'))).toBe(true);
     expect(existsSync(join(dir, 'rules.json'))).toBe(true);
+    expect(existsSync(join(dir, 'spamcha.config.json'))).toBe(true);
+    expect(first).toMatch(/stampField/); // nombres stealth generados por sitio
 
     const second = await run(['init', '--dir', dir]);
     expect(second).toContain('Skipped');
