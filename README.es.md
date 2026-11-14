@@ -323,6 +323,15 @@ para que los bots tontos lo rellenen con ganas. Esto no es la seguridad en sí �
 sigue siendo HMAC y el código es público — es convertir cada web en un target a medida
 en vez de una receta.
 
+### Los mutantes
+
+`test/mutantes.test.ts` es un zoológico de estrategias de ataque — POSTs directos,
+render-relámpago, relleno de honeypot, ráfagas de replay, adivinadores de campos,
+guest-posting pulido, spam de plantilla, industrias de replay — contra el portero
+en el día 0 y otra vez tras el feedback del dueño. El marcador forma parte de la
+suite: 7 de 8 mueren en el día 0, el que escapa muere con el clic 3, y el spam de
+plantilla cae 10/10 tras una marca.
+
 ## Desarrollo
 
 ```sh

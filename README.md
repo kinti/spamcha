@@ -322,6 +322,14 @@ The honeypot gets a *plausible* name from a pool (`empresa37`, `company_website4
 so dumb bots fill it eagerly. This is not the security itself — the stamp is still HMAC
 and the code is public — it's making every site a custom target instead of a recipe.
 
+### The mutants
+
+`test/mutantes.test.ts` is a zoo of attacker strategies — raw POSTs, render-flash,
+honeypot-fillers, replay bursts, field-guessers, polished guest-posting, template
+spam, replay industries — run against the gatekeeper on day 0 and again after the
+owner's feedback. The scoreboard is part of the test suite: 7 of 8 die on day 0,
+the one that escapes is dead by click 3, and template spam dies 10/10 after one mark.
+
 ## Development
 
 ```sh
