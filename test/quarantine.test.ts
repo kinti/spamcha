@@ -53,3 +53,36 @@ describe('quarantine store', () => {
     expect(q.list()).toHaveLength(2);
   });
 });
+
+describe('confirmation (double opt-in, sin humanos)', () => {
+  it('token → confirm → delivered, sin entrenar nada por sí solo', () => {
+    const q = tienda();
+    q.add({ mensaje: 'posible spam' }, { probability: 0.6, phase: 'cold' }, 'token-abc');
+    const [entry] = q.listPending();
+    expect(entry?.token).toBe('token-abc');
+
+    // el "remitente" confirma con el token: entregado, NO entrenado
+    expect(q.markConfirmed(entry!.id)).toBe(true);
+    expect(q.listPending()).toHaveLength(0);
+    expect(q.listConfirmed()).toHaveLength(1);
+    expect(q.listConfirmed()[0]?.fields.mensaje).toBe('posible spam');
+  });
+
+  it('un token desconocido no confirma nada', () => {
+    const q = tienda();
+    q.add({ mensaje: 'x' }, { probability: 0.5, phase: 'cold' }, 'buen-token');
+    expect(q.findByToken('falso')).toBeNull();
+    expect(q.markConfirmed('falso')).toBe(false);
+    expect(q.listPending()).toHaveLength(1);
+  });
+
+  it('sweep: lo no confirmado caduca, lo confirmado se queda', () => {
+    const q = tienda();
+    const viejo = q.add({ mensaje: 'viejo sin confirmar' }, { probability: 0.5, phase: 'cold' }, 'tok-viejo');
+    const confirmado = q.add({ mensaje: 'confirmado a tiempo' }, { probability: 0.5, phase: 'cold' }, 'tok-bueno');
+    q.markConfirmed(confirmado.id);
+    const borrados = q.sweepExpired(Date.now() + 8 * 24 * 60 * 60 * 1000);
+    expect(borrados.map((e) => e.id)).toEqual([viejo.id]);
+    expect(q.listConfirmed()).toHaveLength(1);
+  });
+});

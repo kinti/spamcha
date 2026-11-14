@@ -160,7 +160,14 @@ export function createServeServer(guard: Gatekeeper, options: ServeOptions = {})
       } else {
         fields = fieldsFrom(raw);
       }
-      const verdict = await guard.review(fields, { ip: clientIp(request, options) });
+      const verdict = await guard.review(fields, {
+        ip: clientIp(request, options),
+        headers: request.headers as Record<string, string>,
+      });
+      if (verdict.decision === 'quarantine' && verdict.confirmToken) {
+        (verdict as { confirmUrl?: string }).confirmUrl =
+          `http://${request.headers.host ?? 'localhost'}/confirm?token=${verdict.confirmToken}`;
+      }
       sendJson(response, 200, verdict, options.cors);
       return;
     }
@@ -202,6 +209,18 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
       // fixed target: the Referer header is attacker-controlled (open redirect)
       response.writeHead(303, { location: '/panel' });
       response.end();
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/confirm') {
+      const token = query.get('token') ?? '';
+      const entry = guard.confirmSubmission(token);
+      if (entry) {
+        sendHtml(response, 200, PAGE(`<div class="veredicto pass">✓ Message confirmed and delivered</div>
+<p>Gracias — tu mensaje ya está en manos del destinatario.</p><p><a href="/panel">← panel</a></p>`));
+      } else {
+        sendHtml(response, 404, PAGE('<div class="veredicto reject">✗ Invalid or expired confirmation link</div><p><a href="/">← back</a></p>'));
+      }
       return;
     }
 

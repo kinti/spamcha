@@ -221,6 +221,26 @@ app.get('/panel', (c) => c.html(panelHtml(guard)));
 
 Zero JavaScript, server-rendered, XSS-escaped. **Security note: the panel reads your private data and has no built-in auth — serve it on localhost or behind your own auth** (Cloudflare Access fits naturally).
 
+## Hands-off operation (the intervention ladder)
+
+spamcha is designed so that **human intervention is optional at every level**:
+
+- **Level 0 — fully hands-off (the default):** the gates stop the crude bots, the rules
+  stop the classic slop, `spamcha feed update` in a cron delivers the guild's curated rules,
+  and held submissions carry a **confirmation link** for the sender (the newsletter
+  double opt-in pattern): a real person clicks it and the message is delivered to the
+  panel's "Confirmed" inbox — bots don't click confirmation links. Anything unconfirmed
+  for 7 days is swept away as presumed spam (deleted, never trained — mail
+  deliverability noise makes non-response a weak signal).
+- **Level 1 — occasional:** a glance at the panel and a few "this was garbage" clicks
+  sharpen the per-site bayes. Optional, not required.
+- **Level 2 — never needed:** sector feed packs and tuning exist for those who want them.
+
+The verdict JSON carries `confirmToken` / `confirmUrl` for quarantined submissions — the
+site puts the link on its thank-you page or its own mail; `GET /confirm?token=…` confirms
+and delivers. Confirming delivers without training: a spammer with a monitored mailbox
+could confirm their pitch, so the ham judgment stays with the operator (who can also
+train from any message with one click).
 ## How it decides
 
 Two signals, fused:

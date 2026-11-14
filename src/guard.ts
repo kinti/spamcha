@@ -8,6 +8,8 @@ import { existsSync } from 'node:fs';
 import { createModel } from './bayes.js';
 import type { BayesModel } from './bayes.js';
 import { mergeFeedChannels } from './feed.js';
+import { hmacHex } from './crypto.js';
+import { randomBase64Url } from './crypto.js';
 import { loadCachedFeeds } from './feed-cache.js';
 import { MIN_DOCS_DEFAULT, trainFields } from './judge.js';
 import { VerdictLog } from './log.js';
@@ -15,6 +17,7 @@ import { translate } from './locales.js';
 import type { Locale } from './locales.js';
 import { defaultRulePack } from './rules-default.js';
 import { QuarantineStore } from './quarantine.js';
+import type { QuarantineEntry } from './quarantine.js';
 import { createRateLimiter } from './rate-limit.js';
 import type { RateLimiter } from './rate-limit.js';
 import { verifySubmission } from './gatekeeper.js';
@@ -46,6 +49,10 @@ export interface GatekeeperConfig extends GatekeeperOptions {
   maxFieldLength?: number;
   /** Log rotation: keep only the newest N entries (default 1.000). */
   logMaxEntries?: number;
+  /** Days an unconfirmed quarantined submission waits before being swept as
+   *  presumed spam (default 7). The confirmation is the double-opt-in click
+   *  that removes the human from the loop. */
+  confirmTtlDays?: number;
   /** Weak-train clean passes as ham automatically. OFF by default: unknown
    *  spam can also pass on day 0, and training it as ham poisons the corpus.
    *  Enable once you trust the rules+feeds to catch most incoming slop. */
@@ -76,7 +83,8 @@ export function createGatekeeper(config: GatekeeperConfig) {
   }
 
   const replayCache = new Map<string, number>();
-  const quarantine = config.quarantinePath ? new QuarantineStore(config.quarantinePath) : null;
+  const confirmTtlMs = (config.confirmTtlDays ?? 7) * 24 * 60 * 60 * 1000;
+  const quarantine = config.quarantinePath ? new QuarantineStore(config.quarantinePath, confirmTtlMs) : null;
   const log = config.logPath ? new VerdictLog(config.logPath, config.logMaxEntries ?? 1_000) : null;
   const limiter: RateLimiter | null = config.rateLimit ? createRateLimiter(config.rateLimit) : null;
 
@@ -148,8 +156,16 @@ export function createGatekeeper(config: GatekeeperConfig) {
         trainFields(model, stripOwnFields(fields), 'ham');
         if (config.modelPath) saveModel(model, config.modelPath);
       }
+      let confirmToken: string | undefined;
       if (verdict.decision === 'quarantine' && quarantine) {
-        quarantine.add(stripOwnFields(fields), verdict);
+        // Double opt-in, sin humanos: el token permite al propio remitente
+        // confirmar su mensaje (un clic — los bots no confirman enlaces).
+        // La confirmación ENTREGA el mensaje; no entrena (poisoning vector).
+        confirmToken = randomBase64Url(24);
+        quarantine.add(stripOwnFields(fields), verdict, confirmToken);
+      }
+      if (verdict.decision === 'quarantine') {
+        (verdict as SubmissionVerdict).confirmToken = confirmToken;
       }
       if (log) {
         const codes = [
@@ -163,7 +179,33 @@ export function createGatekeeper(config: GatekeeperConfig) {
 
     /** Pending held submissions (the review page feeds on this). */
     listQuarantine(): ReturnType<QuarantineStore['list']> {
-      return quarantine?.list() ?? [];
+      quarantine?.sweepExpired();
+      return quarantine?.listPending() ?? [];
+    },
+
+    /** Confirmed (delivered) submissions, newest first. */
+    listConfirmed(): ReturnType<QuarantineStore['listConfirmed']> {
+      return quarantine?.listConfirmed() ?? [];
+    },
+
+    /**
+     * Double opt-in sin humanos: el remitente confirma su mensaje con el
+     * enlace (el sitio lo entrega por mail o lo muestra en su página de
+     * gracias). Delivered ≠ trained: confirmar NO entrena ham (un spammer
+     * con buzón monitorizado confirmaría — vector de envenenamiento).
+     * Devuelve la entrada entregada, o null si el token no vale.
+     */
+    confirmSubmission(token: string): QuarantineEntry | null {
+      if (!quarantine) return null;
+      const entry = quarantine.findByToken(token);
+      if (!entry) return null;
+      quarantine.markConfirmed(entry.id);
+      return entry;
+    },
+
+    /** Removes a held entry WITHOUT training (the plain "delete" button). */
+    discardQuarantine(id: string): boolean {
+      return quarantine?.resolve(id) ?? false;
     },
 
     /**
@@ -179,11 +221,6 @@ export function createGatekeeper(config: GatekeeperConfig) {
       if (config.modelPath) saveModel(model, config.modelPath);
       quarantine.resolve(id);
       return true;
-    },
-
-    /** Removes an entry WITHOUT training (the plain "delete" button). */
-    discardQuarantine(id: string): boolean {
-      return quarantine?.resolve(id) ?? false;
     },
   };
 }

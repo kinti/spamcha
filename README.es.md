@@ -221,6 +221,27 @@ Entonces `judge`, `eval` y el guard fusionan los canales automáticamente (`--fe
 
 Una razón de cuarentena siempre dice quién mandó la regla: `rule:feed:oficial/es:seo-slop-es`.
 
+## Operación sin manos (la escalera de intervención)
+
+spamcha está diseñado para que **la intervención humana sea opcional en todos los niveles**:
+
+- **Nivel 0 — sin manos (por defecto):** las puertas paran a los bots tontos, las reglas
+  paran el slop clásico, `spamcha feed update` en un cron trae las reglas del gremio, y
+  los envíos retenidos llevan un **enlace de confirmación** para el remitente (el patrón
+  doble opt-in de los boletines): una persona real lo pulsa y el mensaje se entrega en la
+  bandeja "Confirmados" del panel — los bots no confirman enlaces. Lo que nadie confirma
+  en 7 días se barre como presunto spam (borrado, sin entrenar — el ruido de
+  entregabilidad hace de la no-respuesta una señal débil).
+- **Nivel 1 — ocasional:** un vistazo al panel y unos clics de "esto era mierda" afinan
+  el bayes de tu sitio. Opcional, no requerido.
+- **Nivel 2 — nunca necesario:** los packs por sector y el ajuste fino existen para
+  quien los quiera.
+
+El veredicto JSON lleva `confirmToken` / `confirmUrl` para los envíos retenidos — el sitio
+pone el enlace en su página de gracias o en su propio correo; `GET /confirm?token=…`
+confirma y entrega. Confirmar entrega sin entrenar: un spammer con buzón monitorizado
+podría confirmar su oferta, así que el juicio de ham se queda en el operador (que también
+puede entrenar desde cualquier mensaje con un clic).
 ## Cómo decide
 
 Dos señales, fusionadas:

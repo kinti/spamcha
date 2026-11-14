@@ -193,3 +193,32 @@ describe('createGatekeeper', () => {
     expect(JSON.parse(readFileSync(join(dir, 'spamcha.json'), 'utf8'))).toMatchObject({ docs: { spam: 1, ham: 0 } });
   });
 });
+
+describe('double opt-in (sin humanos)', () => {
+  it('quarantine → confirmToken → confirmSubmission entrega sin entrenar ham', async () => {
+    const { guard } = guardDePrueba();
+    const token = await guard.stampToken();
+    const v = await guard.review(
+      {
+        nombre: 'Anna',
+        mensaje: 'aumente su posicion en google con backlinks premium http://a.xyz http://b.xyz http://c.xyz http://d.xyz http://e.xyz',
+        spamcha: token,
+        website: '',
+      },
+      { ip: '10.7.7.1', now: Date.now() + 4_000 },
+    );
+    expect(v.decision).toBe('quarantine');
+    expect(v.confirmToken).toBeTruthy();
+
+    // el remitente confirma: entregado al panel (Confirmados), sin entrenar ham
+    const antes = guard.model.docs.ham;
+    const entregada = guard.confirmSubmission(v.confirmToken!);
+    expect(entregada).not.toBeNull();
+    expect(guard.model.docs.ham).toBe(antes); // confirmar NO entrena (poisoning vector)
+    expect(guard.listQuarantine()).toHaveLength(0);
+    expect(guard.listConfirmed()).toHaveLength(1);
+
+    // token falso → nada
+    expect(guard.confirmSubmission('falso')).toBeNull();
+  });
+});

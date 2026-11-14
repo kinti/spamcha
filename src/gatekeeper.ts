@@ -50,6 +50,9 @@ export interface GatekeeperOptions extends JudgeOptions {
 export interface SubmissionVerdict extends Verdict {
   /** Reasons from the silent signals (agent, stamp, honeypot, timing). */
   signals: Reason[];
+  /** Confirmation token for held submissions (double opt-in): the site puts
+   *  the link in front of the sender; confirming delivers the message. */
+  confirmToken?: string;
 }
 
 export interface VerifySubmissionMeta {
