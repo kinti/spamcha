@@ -37,5 +37,12 @@
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
   },
-  "homepage": "https://spamcha.com"
+  "homepage": "https://github.com/kinti/spamcha#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kinti/spamcha.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kinti/spamcha/issues"
+  }
 }
