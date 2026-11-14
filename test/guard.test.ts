@@ -134,8 +134,14 @@ describe('createGatekeeper', () => {
     expect(otra.decision).not.toBe('reject');
   });
 
-  it('auto-ham: a clean pass trains the ham side by itself', async () => {
-    const { guard, dir } = guardDePrueba();
+  it('auto-ham (opt-in): a clean pass trains the ham side by itself', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'spamcha-autoham-'));
+    const guard = createGatekeeper({
+      secret: SECRET,
+      modelPath: join(dir, 'spamcha.json'),
+      autoHam: true,
+      minAgeMs: 0,
+    });
     const token = await guard.stampToken();
     const antes = guard.model.docs.ham;
     const v = await guard.review(
@@ -145,6 +151,21 @@ describe('createGatekeeper', () => {
     expect(v.decision).toBe('pass');
     expect(guard.model.docs.ham).toBe(antes + 1);
     expect(JSON.parse(readFileSync(join(dir, 'spamcha.json'), 'utf8'))).toMatchObject({ docs: { ham: antes + 1 } });
+  });
+
+  it('auto-ham stays OFF by default: a clean pass does not train anything', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'spamcha-noautoham-'));
+    const guard = createGatekeeper({
+      secret: SECRET,
+      modelPath: join(dir, 'spamcha.json'),
+      minAgeMs: 0,
+    });
+    const token = await guard.stampToken();
+    await guard.review(
+      { nombre: 'Carmen', mensaje: 'Hola, quería preguntar el precio', spamcha: token, website: '' },
+      { ip: '10.8.0.1', now: Date.now() + 4_000 },
+    );
+    expect(guard.model.docs.ham).toBe(0);
   });
 
   it('stampHtml paints the two hidden fields', async () => {

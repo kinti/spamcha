@@ -4,7 +4,7 @@
 
 **The invisible antispam for web forms — local, trainable, zero runtime dependencies.** A signed render stamp + server-side time floor + honeypot + a local content judge (Bayesian + declarative rules). Your form content never leaves your server, and no human ever sees a challenge.
 
-The missing piece of the invisible antispam stack. Proof-of-work captchas (ALTCHA, Cap) stop cheap bots but judge *behavior*. Cloud judges (Akismet, Formspree, CleanTalk) judge *content* — but your visitors' text gets shipped to someone else's cloud. There is no maintained, trainable, 100% local content classifier for forms. In any language. This is that piece.
+The missing piece of the invisible antispam stack. Proof-of-work captchas (ALTCHA, Cap) stop cheap bots but judge *behavior*. Cloud judges (Akismet, Formspree, CleanTalk) judge *content* — but your visitors' text gets shipped to someone else's cloud. ALTCHA's paid Sentinel platform now ships self-hosted content classification too ([classifier docs](https://altcha.org/docs/sentinel/features/classifier)) — worth comparing. What it doesn't ship is a trainable content judge as a **small MIT-licensed library you embed**: five lines, zero dependencies, explainable verdicts, trained by your own clicks. This is that piece.
 
 ```
 human → form → invisible stamp → gatekeeper → judge → ✓ inbox
@@ -167,7 +167,7 @@ Behavior: `reject` → the middleware answers 403 with the verdict JSON and your
 ## The feedback loop: the "this was garbage" button
 
 This is the part nobody else ships: the quarantined submissions get stored locally, the site owner reviews them, and **the judge trains on the spot**.
-Clean passes also self-train as ham automatically (`autoHam`) — the site's real traffic builds the other class by itself.
+Ham self-training is **opt-in** (`autoHam: true`) and off by default: on day 0, unknown spam can also pass, and weak-training it as ham would poison the corpus. Enable it once rules+feeds catch most incoming slop.
 
 **The measured learning curve on a novel spam family** (no rules fire, six variants, four real ham messages):
 day 0 → **0/6 caught** (honest: rules miss it); after the owner marks 1 → 1/6; after marking 3 → **6/6, zero false positives**,
@@ -232,7 +232,8 @@ The fusion is deliberately asymmetric in one way: **the bayes earns its voice as
 
 Bands: `probability ≥ 0.85 → reject`, `≥ 0.5 → quarantine`, else `pass`. Configurable.
 
-**Cold start works from minute zero — no training required to be useful.** The gates kill content-independent bots (a POST without a stamp needs zero spam knowledge to reject), the default rule pack catches typical slop, and a feed channel adds the guild's curated rules on day one. Training doesn't make it *work* — it makes it *yours*: measured on the eval corpus, the untrained rules-only judge caught everything the trained one did; what training adds is robustness to the variants your site specifically receives.
+**Cold start works from minute zero — no training required to be useful.**
+An observation mode (logging what *would* have been blocked) is on the roadmap for measuring real-world efficacy honestly. The gates kill content-independent bots (a POST without a stamp needs zero spam knowledge to reject), the default rule pack catches typical slop, and a feed channel adds the guild's curated rules on day one. Training doesn't make it *work* — it makes it *yours*: measured on the eval corpus, the untrained rules-only judge caught everything the trained one did; what training adds is robustness to the variants your site specifically receives.
 
 ## What goes public, what stays private
 

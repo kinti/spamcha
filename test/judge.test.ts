@@ -138,7 +138,7 @@ describe('judge', () => {
     train(m, tokenize(familia), 'spam');
     const v = judge(variante, m);
     expect(v.decision).toBe('quarantine');
-    expect(v.reasons.some((r) => r.code === 'bayes-arranque')).toBe(true);
+    expect(v.reasons.some((r) => r.code === 'bayes-convinced')).toBe(true);
     // y un ham real no lo dispara
     const ham = judge('Hola, quería preguntar el precio', m);
     expect(ham.decision).toBe('pass');

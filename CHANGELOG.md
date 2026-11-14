@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.0 — fiabilidad: hallazgos de la auditoría externa aplicados
+- FIX regression: the convinced-bayes quarantine floor now applies at ANY corpus
+  size (it vanished at the trained boundary — learning more degraded protection).
+- FIX WordPress bridge: passes the submitted stamp + honeypot through (it
+  fabricated both, so every real comment would be rejected), fresh stamp per
+  render (no 10-min shared token against single-use stamps), commenter IP
+  forwarded for rate limiting. php -l clean.
+- autoHam is now opt-in (off by default): day-0 unknown spam can pass, and
+  weak-training it as ham poisons the corpus.
+- SEC: /verdict no longer accepts a client-provided clock (`now`) — the time
+  floor can't be bypassed from the request body.
+- README claims qualified: ALTCHA Sentinel ships self-hosted content
+  classification (commercial); the 3 s floor stops automation-simple
+  submissions, it doesn't prove humanity; observation mode on the roadmap.
 ## 0.9.4 — the mutant zoo
 - `test/mutantes.test.ts`: a zoo of attacker strategies (raw POSTs, render-flash,
   honeypot-fillers, replay bursts, field-guessers, polished guest-posting,

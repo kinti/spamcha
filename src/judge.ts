@@ -99,21 +99,26 @@ export function judge(
   // rules (novel spam family: 2-3 marked examples + the site's own ham history
   // already present). Quarantine is reviewable — a false positive costs one
   // click; a false negative costs another month of the same slop in the inbox.
-  const greenThreshold = options.greenQuarantine ?? 0.9;
+  // El suelo del bayes convencido aplica en TODAS las fases: con 4 documentos o
+  // con 4.000, si el clasificador está convencido (p ≥ floor) y las reglas no
+  // alcanzaron cuarentena, el envío se retiene para revisión. Sin este suelo,
+  // aprender (salir de fase verde) DEGRADABA la protección — la regresión que
+  // la revisión externa reprodujo con la tabla 4/5/50 documentos.
+  const convincedFloor = options.greenQuarantine ?? 0.9;
   let boosted = false;
-  if (!trained && bayesProbability !== null && bayesProbability >= greenThreshold && decision === 'pass') {
+  if (bayesProbability !== null && bayesProbability >= convincedFloor && decision === 'pass') {
     decision = 'quarantine';
     fused = Math.max(fused, bayesProbability);
     boosted = true;
     reasons.push({
-      code: 'bayes-arranque',
-      detail: `bayes verde convencido (${bayesProbability.toFixed(3)}) → cuarentena revisable`,
+      code: 'bayes-convinced',
+      detail: `bayes convencido (${bayesProbability.toFixed(3)}) → cuarentena revisable`,
     });
   }
 
   return {
     decision,
-    probability: boosted ? fused : fused,
+    probability: fused,
     bayes: bayesProbability,
     rules: rulesOutcome.weight,
     phase: trained ? 'trained' : 'cold',

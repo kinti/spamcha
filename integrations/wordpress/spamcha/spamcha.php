@@ -40,7 +40,10 @@ class Spamcha_Plugin {
 			self::service( '/verdict' ),
 			array(
 				'timeout' => 5,
-				'headers' => array( 'content-type' => 'application/x-www-form-urlencoded' ),
+				'headers' => array(
+					'content-type'      => 'application/x-www-form-urlencoded',
+					'x-forwarded-for'   => (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ),
+				),
 				'body'    => build_query( $fields ),
 			)
 		);
@@ -52,22 +55,18 @@ class Spamcha_Plugin {
 		return is_array( $body ) && isset( $body['decision'] ) ? $body : array( 'decision' => 'pass', 'error' => true );
 	}
 
-	/** Hidden stamp fields for any form, fetched from the service. */
+	/**
+	 * Hidden stamp fields for any form, fetched FRESH per render.
+	 * No transient: stamps are single-use — sharing one token across visitors
+	 * would trigger the service's replay protection and reject real people.
+	 */
 	public static function stamp_html(): string {
-		$cached = get_transient( 'spamcha_stamp_html' );
-		if ( is_string( $cached ) && $cached !== '' ) {
-			return $cached;
-		}
 		$res = wp_remote_get( self::service( '/stamp?format=html' ), array( 'timeout' => 5 ) );
 		if ( is_wp_error( $res ) ) {
 			return '';
 		}
 		$body = json_decode( wp_remote_retrieve_body( $res ), true );
-		$html = is_array( $body ) && isset( $body['html'] ) ? (string) $body['html'] : '';
-		if ( $html !== '' ) {
-			set_transient( 'spamcha_stamp_html', $html, 10 * MINUTE_IN_SECONDS );
-		}
-		return $html;
+		return is_array( $body ) && isset( $body['html'] ) ? (string) $body['html'] : '';
 	}
 
 	/* ── Comment protection ─────────────────────────────────────────────── */
@@ -85,13 +84,12 @@ class Spamcha_Plugin {
 
 	/** Runs before WP stores anything: reject, hold for moderation, or pass. */
 	public function judge_comment( array $comment ): array {
-		$fields = array(
-			'author'  => (string) ( $comment['comment_author'] ?? '' ),
-			'email'   => (string) ( $comment['comment_author_email'] ?? '' ),
-			'url'     => (string) ( $comment['comment_author_url'] ?? '' ),
-			'mensaje' => (string) ( $comment['comment_content'] ?? '' ),
-			'website' => '', // honeypot field added below via echo_stamp
-		);
+		// Pass the form fields AS SUBMITTED — including the stamp and the
+		// honeypot the service rendered. Fabricating them here would defeat
+		// the stamp gate (the service would see missing/stale stamps and
+		// reject every real comment).
+		$fields = $_POST;
+		$fields['mensaje'] = (string) ( $comment['comment_content'] ?? '' );
 		$v = self::verdict( $fields );
 		switch ( $v['decision'] ) {
 			case 'reject':

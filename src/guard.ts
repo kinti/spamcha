@@ -46,8 +46,9 @@ export interface GatekeeperConfig extends GatekeeperOptions {
   maxFieldLength?: number;
   /** Log rotation: keep only the newest N entries (default 1.000). */
   logMaxEntries?: number;
-  /** Weak-train clean passes as ham automatically (default true): the site's
-   *  real traffic builds the ham corpus by itself. */
+  /** Weak-train clean passes as ham automatically. OFF by default: unknown
+   *  spam can also pass on day 0, and training it as ham poisons the corpus.
+   *  Enable once you trust the rules+feeds to catch most incoming slop. */
   autoHam?: boolean;
 }
 
@@ -143,7 +144,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
   }, { headers: meta.headers });
       // auto-ham: a pass with zero fired rules is near-certainly real mail —
       // the site's own traffic builds the ham corpus without anyone clicking.
-      if (config.autoHam !== false && verdict.decision === 'pass' && verdict.rules === 0) {
+      if (config.autoHam === true && verdict.decision === 'pass' && verdict.rules === 0) {
         trainFields(model, stripOwnFields(fields), 'ham');
         if (config.modelPath) saveModel(model, config.modelPath);
       }

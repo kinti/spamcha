@@ -54,8 +54,8 @@ export interface JudgeOptions {
   locale?: 'es' | 'en';
   /** Truncate each field to this many characters before judging (DoS bound). */
   maxFieldLength?: number;
-  /** Green-phase bayes quarantine floor (default 0.9): a small corpus THIS
-   *  convinced holds submissions for review instead of passing them. */
+  /** Convinced-bayes quarantine floor (default 0.9): at ANY corpus size, a
+   *  bayes this convinced holds submissions for review instead of passing. */
   greenQuarantine?: number;
 }
 

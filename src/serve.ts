@@ -4,7 +4,7 @@
 // own auth if you must):
 //   GET  /health            liveness + model state
 //   GET  /stamp             issue a stamp (?format=html → the two hidden inputs)
-//   POST /verdict           body: urlencoded fields, or JSON {fields, ip?, now?}
+//   POST /verdict           body: urlencoded fields, or JSON {fields, ip?}
 //                           → the full gatekeeper verdict as JSON (always 200 —
 //                             the `decision` field drives your code)
 //   GET  /panel             what arrived (panelHtml)
@@ -146,13 +146,13 @@ export function createServeServer(guard: Gatekeeper, options: ServeOptions = {})
       const contentType = request.headers['content-type'] ?? '';
       let fields: Record<string, string> = {};
       let ip: string | undefined = request.headers['x-forwarded-for'] as string | undefined;
-      let now: number | undefined;
       if (contentType.includes('application/json')) {
         try {
-          const parsed = JSON.parse(raw) as { fields?: Record<string, string>; ip?: string; now?: number };
+          // SEC: `now` del cliente NO se acepta — el reloj del suelo de tiempo
+          // es del servidor (inyectarlo permitiría saltarse la puerta).
+          const parsed = JSON.parse(raw) as { fields?: Record<string, string>; ip?: string };
           fields = parsed.fields ?? {};
           ip = parsed.ip ?? ip;
-          now = parsed.now;
         } catch {
           sendJson(response, 400, { error: 'body is not valid JSON' }, options.cors);
           return;
@@ -160,7 +160,7 @@ export function createServeServer(guard: Gatekeeper, options: ServeOptions = {})
       } else {
         fields = fieldsFrom(raw);
       }
-      const verdict = await guard.review(fields, { ip: clientIp(request, options), now });
+      const verdict = await guard.review(fields, { ip: clientIp(request, options) });
       sendJson(response, 200, verdict, options.cors);
       return;
     }

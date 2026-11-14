@@ -4,7 +4,7 @@
 
 **El antispam invisible para formularios web — local, entrenable, cero dependencias de runtime.** Un sello firmado al renderizar + suelo de tiempo en el servidor + honeypot + un juez de contenido local (bayesiano + reglas declarativas). El contenido de tus formularios nunca sale de tu servidor, y ningún ser humano ve nunca un desafío.
 
-La pieza que faltaba en la pila antispam invisible. Los captchas de proof-of-work (ALTCHA, Cap) paran bots baratos pero juzgan *comportamiento*. Los jueces en la nube (Akismet, Formspree, CleanTalk) juzgan *contenido* — pero el texto de tus visitantes viaja a la nube de otro. No existe ningún clasificador de contenido mantenido, entrenable y 100% local para formularios. En ningún lenguaje. Esta es esa pieza.
+La pieza que faltaba en la pila antispam invisible. Los captchas de proof-of-work (ALTCHA, Cap) paran bots baratos pero juzgan *comportamiento*. Los jueces en la nube (Akismet, Formspree, CleanTalk) juzgan *contenido* — pero el texto de tus visitantes viaja a la nube de otro. ALTCHA Sentinel ofrece ya clasificación autoalojada como plataforma comercial ([docs del classifier](https://altcha.org/docs/sentinel/features/classifier)) — merece compararse. Lo que faltaba era un juez entrenable como **librería MIT incrustable**: cinco líneas, cero dependencias, veredictos explicables entrenados con tus propios clics. Esta es esa pieza.
 
 ```
 humano → formulario → sello invisible → portero → juez → ✓ bandeja de entrada
@@ -167,7 +167,7 @@ Comportamiento: `reject` → el middleware contesta 403 con el veredicto JSON y 
 ## El bucle de feedback: el botón "esto era mierda"
 
 Esta es la parte que nadie más entrega: los envíos en cuarentena se guardan localmente, el dueño los revisa y **el juez entrena al momento**.
-Los pases limpios también auto-entrenan como ham (`autoHam`) — el tráfico real del sitio construye la otra clase solo.
+El auto-entrenamiento como ham es **opt-in** (`autoHam: true`) y viene apagado: en el día 0, el spam desconocido también pasa, y entrenarlo como ham envenenaría el corpus. Actívalo cuando reglas+feeds cacen la mayoría del slop entrante.
 
 **La curva de aprendizaje medida sobre una familia de spam nueva** (sin reglas que la pillen, seis variantes, cuatro hams reales):
 día 0 → **0/6 cazados** (honesto: las reglas no la ven); tras marcar 1 → 1/6; tras marcar 3 → **6/6, cero falsos positivos**,
