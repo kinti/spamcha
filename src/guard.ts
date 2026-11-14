@@ -7,9 +7,8 @@
 import { existsSync } from 'node:fs';
 import { createModel } from './bayes.js';
 import type { BayesModel } from './bayes.js';
+import { digestHex, hmacHex, randomBase64Url } from './crypto.js';
 import { mergeFeedChannels } from './feed.js';
-import { hmacHex } from './crypto.js';
-import { randomBase64Url } from './crypto.js';
 import { loadCachedFeeds } from './feed-cache.js';
 import { MIN_DOCS_DEFAULT, trainFields } from './judge.js';
 import { VerdictLog } from './log.js';
@@ -55,7 +54,7 @@ export interface GatekeeperConfig extends GatekeeperOptions {
   confirmTtlDays?: number;
   /** Webhook on every quarantine (mail digests, chats, automations).
    *  Failures are swallowed: a broken notification never changes a verdict. */
-  notify?: (event: { fields: Record<string, string>; verdict: SubmissionVerdict; confirmToken?: string }) => void | Promise<void>;
+  notify?: (event: { fields: Record<string, string>; verdict: SubmissionVerdict; confirmToken?: string; confirmCode?: string }) => void | Promise<void>;
   /** Weak-train clean passes as ham automatically. OFF by default: unknown
    *  spam can also pass on day 0, and training it as ham poisons the corpus.
    *  Enable once you trust the rules+feeds to catch most incoming slop. */
@@ -160,21 +159,35 @@ export function createGatekeeper(config: GatekeeperConfig) {
         if (config.modelPath) saveModel(model, config.modelPath);
       }
       let confirmToken: string | undefined;
+      let confirmCode: string | undefined;
       if (verdict.decision === 'quarantine' && quarantine) {
         // Double opt-in, sin humanos: el token permite al propio remitente
         // confirmar su mensaje (un clic: los bots no confirman enlaces).
         // La confirmación ENTREGA el mensaje; no entrena (poisoning vector).
         confirmToken = randomBase64Url(24);
-        quarantine.add(stripOwnFields(fields), verdict, confirmToken);
+        // Codigo de 6 cifras: a prueba de escaner de correo (los escaner hacen
+        // clic en enlaces; un codigo se teclea). Lo TRANSPORTA el sitio con su
+        // propio correo; spamcha solo lo genera y verifica.
+        confirmCode = String(
+          parseInt((await hmacHex(config.secret, 'code:' + confirmToken)).slice(0, 12), 16) % 1_000_000,
+        ).padStart(6, '0');
+        const codeHash = await digestHex('SHA-256', confirmCode);
+        const entry = quarantine.add(stripOwnFields(fields), verdict, confirmToken, codeHash);
         if (config.notify) {
           // fire-and-forget: una notificacion rota jamas cambia un veredicto
           void Promise.resolve(
-            config.notify({ fields: stripOwnFields(fields), verdict: { ...verdict, confirmToken }, confirmToken }),
+            config.notify({
+              fields: stripOwnFields(fields),
+              verdict: { ...verdict, confirmToken, confirmCode },
+              confirmToken,
+              confirmCode,
+            }),
           ).catch(() => {});
         }
       }
       if (verdict.decision === 'quarantine') {
-        (verdict as SubmissionVerdict).confirmToken = confirmToken;
+        (verdict as { confirmToken?: string }).confirmToken = confirmToken;
+        if (confirmCode !== undefined) (verdict as { confirmCode?: string }).confirmCode = confirmCode;
       }
       if (log) {
         const codes = [
@@ -210,6 +223,17 @@ export function createGatekeeper(config: GatekeeperConfig) {
       if (!entry) return null;
       quarantine.markConfirmed(entry.id);
       return entry;
+    },
+
+    /**
+     * Confirma por codigo de 6 cifras: a prueba de escaner de correo (los
+     * escaner hacen clic en enlaces; un codigo se teclea a mano). 3 fallos
+     * bloquean el codigo (fuerza bruta online, detras del rate limiter).
+     */
+    async confirmByCode(code: string): Promise<QuarantineEntry | null> {
+      if (!quarantine || !/^\d{6}$/.test(code)) return null;
+      const codeHash = await digestHex('SHA-256', code);
+      return quarantine.confirmByCodeHash(codeHash);
     },
 
     /** Removes a held entry WITHOUT training (the plain "delete" button). */

@@ -214,8 +214,13 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
     }
 
     if (request.method === 'GET' && path === '/confirm') {
-      const token = query.get('token') ?? '';
-      const entry = guard.confirmSubmission(token);
+      const token = query.get('token');
+      const code = query.get('code');
+      const entry = token
+        ? guard.confirmSubmission(token)
+        : code
+          ? await guard.confirmByCode(code)
+          : null;
       if (entry) {
         sendHtml(response, 200, PAGE(`<div class="veredicto pass">✓ Message confirmed and delivered</div>
 <p>Gracias: tu mensaje ya está en manos del destinatario.</p><p><a href="/panel">← panel</a></p>`));

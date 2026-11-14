@@ -19,6 +19,11 @@ export interface QuarantineEntry {
   phase: 'cold' | 'trained';
   /** Signed token: whoever holds it can confirm the message as delivered. */
   token: string;
+  /** SHA-256 of the 6-digit confirmation code (scanner-proof alternative to
+   *  the link: mail scanners auto-click links, they can't type codes). */
+  codeHash?: string;
+  /** Failed code entries; at 3 the code locks. */
+  codeAttempts?: number;
   /** Set when the sender confirmed (or the site released it). */
   confirmedAt?: string;
 }
@@ -30,7 +35,7 @@ export class QuarantineStore {
     readonly ttlMs = 7 * 24 * 60 * 60 * 1000,
   ) {}
 
-  add(fields: Record<string, string>, verdict: Pick<Verdict, 'probability' | 'phase'>, token: string): QuarantineEntry {
+  add(fields: Record<string, string>, verdict: Pick<Verdict, 'probability' | 'phase'>, token: string, codeHash?: string): QuarantineEntry {
     const entry: QuarantineEntry = {
       id: randomBase64Url(12),
       receivedAt: new Date().toISOString(),
@@ -38,6 +43,7 @@ export class QuarantineStore {
       probability: verdict.probability,
       phase: verdict.phase,
       token,
+      ...(codeHash ? { codeHash } : {}),
     };
     appendFileSync(this.path, JSON.stringify(entry) + '\n', { encoding: 'utf8', mode: 0o600 });
     return entry;
@@ -72,6 +78,27 @@ export class QuarantineStore {
   /** Finds a PENDING entry by its confirmation token. */
   findByToken(token: string): QuarantineEntry | null {
     return this.list().find((e) => e.token === token && !e.confirmedAt) ?? null;
+  }
+
+  /**
+   * Code confirmation: matches the SHA-256 of the submitted 6-digit code
+   * against the stored hash. Three failed attempts lock the code (brute
+   * force over 10^6 online, behind the rate limiter, is 138 days).
+   * Returns the confirmed entry, or null (wrong/locked).
+   */
+  confirmByCodeHash(codeHash: string): QuarantineEntry | null {
+    const entries = this.list();
+    const entry = entries.find((e) => !e.confirmedAt && e.codeHash === codeHash);
+    if (!entry) return null;
+    const attempts = (entry.codeAttempts ?? 0) + 1;
+    entry.codeAttempts = attempts;
+    if (attempts > 3) {
+      writeFileSync(this.path, entries.map((e) => JSON.stringify(e)).join('\n') + '\n', { encoding: 'utf8', mode: 0o600 });
+      return null;
+    }
+    entry.confirmedAt = new Date().toISOString();
+    writeFileSync(this.path, entries.map((e) => JSON.stringify(e)).join('\n') + '\n', { encoding: 'utf8', mode: 0o600 });
+    return entry;
   }
 
   /** Marks an entry confirmed (delivered to the owner, readable in the panel). */

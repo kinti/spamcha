@@ -31,6 +31,7 @@ export type {
   VerifyStampOptions,
 } from './stamp.js';
 export { verifySubmission } from './gatekeeper.js';
+export type { QuarantineNotification } from './gatekeeper.js';
 export type { GatekeeperOptions, SubmissionVerdict } from './gatekeeper.js';
 export { createGatekeeper } from './guard.js';
 export type { Gatekeeper, GatekeeperConfig, ReviewMeta } from './guard.js';

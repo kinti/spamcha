@@ -66,6 +66,10 @@ export interface SubmissionVerdict extends Verdict {
   /** Confirmation token for held submissions (double opt-in): the site puts
    *  the link in front of the sender; confirming delivers the message. */
   confirmToken?: string;
+  /** Scanner-proof alternative: a 6-digit code the site delivers by its own
+   *  mail; the sender types it back. mail scanners auto-click links, they
+   *  can't type codes. */
+  confirmCode?: string;
 }
 
 export interface VerifySubmissionMeta {

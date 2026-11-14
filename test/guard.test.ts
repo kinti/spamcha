@@ -222,3 +222,62 @@ describe('double opt-in (sin humanos)', () => {
     expect(guard.confirmSubmission('falso')).toBeNull();
   });
 });
+
+describe('confirmación por código de 6 cifras', () => {
+  it('verdict de cuarentena incluye confirmCode; confirmByCode entrega', async () => {
+    const { guard } = guardDePrueba();
+    const token = await guard.stampToken();
+    const v = await guard.review(
+      {
+        nombre: 'Anna',
+        mensaje: 'aumente su posicion en google con backlinks premium http://a.xyz http://b.xyz http://c.xyz http://d.xyz http://e.xyz',
+        spamcha: token,
+        website: '',
+      },
+      { ip: '10.10.0.1', now: Date.now() + 4_000 },
+    );
+    const vv = v as typeof v & { confirmCode?: string };
+    expect(v.decision).toBe('quarantine');
+    expect(vv.confirmCode).toMatch(/^\d{6}$/);
+
+    const entregada = await guard.confirmByCode(vv.confirmCode!);
+    expect(entregada).not.toBeNull();
+    expect(guard.listConfirmed()).toHaveLength(1);
+    expect(guard.listQuarantine().filter((e) => !e.confirmedAt)).toHaveLength(0);
+  });
+
+  it('código incorrecto: 3 fallos bloquean (fuerza bruta online)', async () => {
+    const { guard } = guardDePrueba();
+    const token = await guard.stampToken();
+    await guard.review(
+      {
+        nombre: 'Anna',
+        mensaje: 'aumente su posicion en google con backlinks premium http://a.xyz http://b.xyz http://c.xyz http://d.xyz http://e.xyz',
+        spamcha: token,
+        website: '',
+      },
+      { ip: '10.10.0.2', now: Date.now() + 4_000 },
+    );
+    const pendiente = guard.listQuarantine()[0]!;
+    let ultimo: Awaited<ReturnType<typeof guard.confirmByCode>> = null;
+    for (let intento = 0; intento < 5; intento++) {
+      ultimo = await guard.confirmByCode('000000');
+    }
+    expect(ultimo).toBeNull(); // bloqueado tras 3 fallos
+    // el código correcto ya no funciona: el código está bloqueado
+    expect(await guard.confirmByCode('123456')).toBeNull();
+    // y la entrada sigue pendiente (no confirmada, no entregada)
+    expect(guard.listConfirmed()).toHaveLength(0);
+    void pendiente;
+  });
+
+  it('código malformado (no 6 dígitos): rechazo inmediato', async () => {
+    expect(await guard_confirmByCodeWrapper('12345')).toBeNull();
+    expect(await guard_confirmByCodeWrapper('abcdef')).toBeNull();
+  });
+});
+
+async function guard_confirmByCodeWrapper(code: string) {
+  const { guard } = guardDePrueba();
+  return guard.confirmByCode(code);
+}
