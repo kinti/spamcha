@@ -12,8 +12,8 @@ export interface LoadedFeeds {
   skipped: string[];
 }
 
-export function loadCachedFeeds(feedsDir: string): LoadedFeeds {
-  if (!existsSync(feedsDir)) return { channels: [], skipped: [] };
+export function loadCachedFeeds(feedsDir: string | undefined): LoadedFeeds {
+  if (!feedsDir || !existsSync(feedsDir)) return { channels: [], skipped: [] };
   const channels: FeedChannel[] = [];
   const skipped: string[] = [];
   const now = Date.now();

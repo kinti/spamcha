@@ -256,10 +256,43 @@ eval-spam/
 - The judge reads text. It does not do IP reputation, rate limiting or behavioral signals — those live in the other layers of the stack.
 - The model is a plain JSON file: portable, inspectable, git-friendly (and exactly why it should stay out of public repos). Persistence uses `node:fs`; in the browser use the pure functions (`tokenize`, `probability`, `judge`) with a model served as JSON.
 
+## Serve: your local verdict service (for PHP, Python, WordPress…)
+
+The pipeline as an HTTP service — any backend on the box just asks it:
+
+```sh
+spamcha serve --port 8788 --secret "…"    # binds to 127.0.0.1 by default
+```
+
+| Endpoint | What |
+|---|---|
+| `GET /stamp` | issue a stamp (`?format=html` → the two hidden inputs) |
+| `POST /verdict` | urlencoded fields or JSON `{"fields":{…},"ip","now"}` → verdict JSON (always 200; `decision` drives your code) |
+| `GET /panel` · `GET\|POST /revision` | the panel + quarantine review |
+| `GET /feeds` · `GET /health` | channels in force · liveness |
+
+`--cors` enables cross-origin clients (static sites); the panel still reads private data — keep the service on localhost or behind your own auth. A **Dockerfile** ships in the repo (volume `/datos` holds your private model/quarantine/log/feeds).
+
+## WordPress
+
+A bridge plugin ships in [`integrations/wordpress/`](integrations/wordpress/README.md): comment protection
+(reject / hold-for-moderation / pass), a settings page with service status, panel link, and
+`spamcha_verdict( $fields )` for your own forms.
+
+## web-bot-auth (EXPERIMENTAL)
+
+Signed AI agents (draft-ietf-webbotauth) skip the stamp gates — content still gets judged:
+
+```ts
+createGatekeeper({ secret, webBotAuth: { authority: "mysite.com" } });
+// review(fields, { ip, headers }) — a request with a valid Signature-Agent
+// gets signal `wba:verified`; invalid ones are rejected as `wba:invalid`
+```
+
+Covers the Ed25519 / `@authority` profile of the draft; treat as experimental until it becomes an RFC.
+
 ## Roadmap (documented as pending)
 
-- `spamcha serve`: the verdict pipeline as a local HTTP service — the door for PHP/Python/WordPress backends (mode 2 universality) and for a WordPress plugin; a Docker image wraps it.
-- web-bot-auth verifier: signed agents skip the PoW gate, still get judged.
 - Public benchmark corpus (`spamcha-bench`), starter model, sector feed packs.
 
 ## Development

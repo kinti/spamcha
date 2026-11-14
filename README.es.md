@@ -256,10 +256,43 @@ eval-spam/
 - El juez lee texto. No hace reputación de IP, límite de ritmo externo ni señales de comportamiento — eso vive en las otras capas de la pila.
 - El modelo es un archivo JSON plano: portable, inspeccionable, amigable con git (y justo por eso debería quedarse fuera de repos públicos). La persistencia usa `node:fs`; en el navegador usa las funciones puras (`tokenize`, `probability`, `judge`) con un modelo servido como JSON.
 
+## Serve: tu servicio local de veredictos (para PHP, Python, WordPress…)
+
+El pipeline como servicio HTTP — cualquier backend de la caja le pregunta:
+
+```sh
+spamcha serve --port 8788 --secret "…"    # escucha en 127.0.0.1 por defecto
+```
+
+| Endpoint | Qué |
+|---|---|
+| `GET /stamp` | emite un sello (`?format=html` → los dos campos ocultos) |
+| `POST /verdict` | campos urlencoded o JSON `{"fields":{…},"ip","now"}` → veredicto JSON (siempre 200; el campo `decision` gobierna tu código) |
+| `GET /panel` · `GET\|POST /revision` | el panel + revisión de cuarentena |
+| `GET /feeds` · `GET /health` | canales en vigor · vida |
+
+`--cors` habilita clientes cross-origin (webs estáticas); el panel sigue leyendo datos privados — mantén el servicio en localhost o detrás de tu auth. Un **Dockerfile** viene en el repo (el volumen `/datos` guarda tu modelo/cuarentena/log/feeds privados).
+
+## WordPress
+
+Un plugin puente viene en [`integrations/wordpress/`](integrations/wordpress/README.md): protección de comentarios
+(rechazar / retener en moderación / pasar), página de ajustes con estado del servicio, enlace al panel y
+`spamcha_verdict( $fields )` para tus propios formularios.
+
+## web-bot-auth (EXPERIMENTAL)
+
+Los agentes de IA firmados (draft-ietf-webbotauth) se saltan las puertas del sello — el juez sigue leyendo el contenido:
+
+```ts
+createGatekeeper({ secret, webBotAuth: { authority: "misitio.es" } });
+// review(fields, { ip, headers }) — una petición con Signature-Agent válida
+// recibe la señal `wba:verified`; las inválidas se rechazan como `wba:invalid`
+```
+
+Cubre el perfil Ed25519 / `@authority` del draft; trátalo como experimental hasta que sea RFC.
+
 ## Hoja de ruta (documentado como pendiente)
 
-- `spamcha serve`: el pipeline como servicio HTTP local — la puerta para backends PHP/Python/WordPress (universalidad modo 2) y para un plugin de WordPress; una imagen Docker lo envuelve.
-- Verificador web-bot-auth: agentes firmados se saltan la puerta PoW, el juez los puntúa igual.
 - Corpus público de benchmark (`spamcha-bench`), modelo inicial, packs de feeds por sector.
 
 ## Desarrollo

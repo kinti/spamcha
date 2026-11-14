@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createModel } from '../src/bayes.js';
 import type { BayesModel } from '../src/bayes.js';
+import { generateFeedKeyPair } from '../src/feed.js';
+import { jwkFromPublicB64url } from '../src/wba.js';
 import { issueStamp, verifySubmission } from '../src/index.js';
+import { toBase64Url } from '../src/crypto.js';
+import { fromBase64 } from '../src/crypto.js';
 
 const SECRET = 'long-random-phrase-for-the-gatekeeper-tests';
+const b64ToBytes = (b64url: string): Uint8Array => fromBase64(b64url);
+const bytesToB64 = (bytes: Uint8Array): string => toBase64Url(bytes);
 
 async function freshStamp(): Promise<string> {
   return issueStamp(SECRET);
@@ -128,5 +134,56 @@ describe('gatekeeper', () => {
     const v = await verifySubmission({ nombre: 'bot', mensaje: 'hola' }, model, { ...options(), locale: 'en' });
     expect(v.signals[0]?.code).toBe('stamp:missing');
     expect(v.signals[0]?.text).toBe('No stamp was attached: POST straight at the server without rendering the form');
+  });
+
+  it('web-bot-auth (EXPERIMENTAL): a signed agent skips the stamp gates, content still judged', async () => {
+    const model: BayesModel = createModel();
+    const keys = await generateFeedKeyPair();
+    const now = Date.now();
+    const created = Math.floor(now / 1000);
+    const params = `("@authority");created=${created};expires=${created + 600};keyid="test"`;
+    const base = `"@authority": mipagina.es\n"@signature-params": ${params}`;
+    const key = await crypto.subtle.importKey('pkcs8', b64ToBytes(keys.private), { name: 'Ed25519' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('Ed25519', key, new TextEncoder().encode(base));
+    const headers = {
+      'signature-agent': 'https://agent.example',
+      'signature-input': `webbotauth=("@authority");${params}`,
+      signature: `webbotauth:${bytesToB64(new Uint8Array(sig))}`,
+      host: 'mipagina.es',
+    };
+    const v = await verifySubmission(
+      { nombre: 'agent', mensaje: 'consulta legítima del agente sobre horarios' },
+      model,
+      { ...options(), webBotAuth: { fetchDirectory: async () => ({ keys: [jwkFromPublicB64url(keys.public, 'test')] }) } },
+      { headers, now: now + 1_000 },
+    );
+    expect(v.signals[0]?.code).toBe('wba:verified');
+    expect(v.signals[0]?.detail).toBe('https://agent.example');
+    expect(v.decision).toBe('pass'); // no stamp needed; content is clean
+  });
+
+  it('web-bot-auth: an invalid agent signature is rejected', async () => {
+    const model: BayesModel = createModel();
+    const now = Date.now();
+    const created = Math.floor(now / 1000);
+    const params = `("@authority");created=${created};expires=${created + 600}`;
+    const headers = {
+      'signature-agent': 'https://falso.example',
+      'signature-input': `webbotauth=("@authority");${params}`,
+      signature: 'webbotauth:no-es-una-firma-valida',
+      host: 'mipagina.es',
+    };
+    const keys = await generateFeedKeyPair();
+    const v = await verifySubmission(
+      { mensaje: 'hola' },
+      model,
+      {
+        ...options(),
+        webBotAuth: { fetchDirectory: async () => ({ keys: [jwkFromPublicB64url(keys.public, 'test')] }) },
+      },
+      { headers, now: now + 1_000 },
+    );
+    expect(v.decision).toBe('reject');
+    expect(v.signals[0]?.code).toBe('wba:invalid');
   });
 });

@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { createModel } from './bayes.js';
 import type { BayesModel } from './bayes.js';
+import { createGatekeeper } from './guard.js';
 import { generateFeedKeyPair, mergeFeedChannels, signFeed, verifyFeed } from './feed.js';
 import type { FeedChannel } from './feed.js';
 import { judge, trainFields } from './judge.js';
@@ -17,6 +18,7 @@ import { isLocale, DEFAULT_LOCALE, translate } from './locales.js';
 import type { Locale } from './locales.js';
 import { loadModel, saveModel } from './storage.js';
 import { defaultRulePack } from './rules-default.js';
+import { createServeServer } from './serve.js';
 import type { Label, RulePack } from './types.js';
 
 const DEFAULT_MODEL = 'spamcha.json';
@@ -346,6 +348,36 @@ async function cmdJudge(flags: Record<string, string | boolean>, positional: str
   return JSON.stringify(verdict, null, 2);
 }
 
+/** Long-running: the verdict pipeline as a local HTTP service (mode-2 universality). */
+async function cmdServe(flags: Record<string, string | boolean>, locale: Locale): Promise<string> {
+  const secret = typeof flags['secret'] === 'string' ? flags['secret'] : process.env.SPAMCHA_SECRET;
+  if (!secret) throw new Error('serve needs a secret: --secret "…" or SPAMCHA_SECRET env');
+  const guard = createGatekeeper({
+    secret,
+    modelPath: pathOf(flags, 'model', DEFAULT_MODEL),
+    quarantinePath: pathOf(flags, 'quarantine', 'spamcha-quarantine.jsonl'),
+    logPath: pathOf(flags, 'log', 'spamcha-log.jsonl'),
+    feedsDir: pathOf(flags, 'feeds-dir', DEFAULT_FEEDS_DIR),
+    locale,
+    rateLimit: { max: 30, windowMs: 60_000 },
+    webBotAuth: flags['web-bot-auth'] === true
+      ? { authority: typeof flags['authority'] === 'string' ? flags['authority'] : undefined }
+      : undefined,
+  });
+  const port = Number(flags['port'] ?? process.env.SPAMCHA_PORT ?? 8788);
+  const host = pathOf(flags, 'host', '127.0.0.1'); // localhost by default: it reads private data
+  const server = createServeServer(guard, { cors: flags['cors'] === true });
+  await new Promise<void>((resolve) => server.listen(port, host, resolve));
+  return [
+    `spamcha service listening on http://${host}:${port}`,
+    `  POST /verdict   fields (urlencoded) or {"fields":{…}} → verdict JSON`,
+    `  GET  /stamp     ?format=html → hidden inputs for your form`,
+    `  GET  /panel · GET|POST /revision · GET /feeds · GET /health`,
+    `  model: docs spam=${guard.model.docs.spam} ham=${guard.model.docs.ham} · quarantine ${guard.listQuarantine().length} pending`,
+    '  (Ctrl-C to stop)',
+  ].join('\n');
+}
+
 export async function run(args: string[]): Promise<string> {
   const { command, flags, positional } = parse(args);
   const locale = localeOf(flags);
@@ -356,6 +388,7 @@ export async function run(args: string[]): Promise<string> {
     case 'eval': return cmdEval(flags, locale);
     case 'judge': case 'juzgar': return cmdJudge(flags, positional, locale);
     case 'feed': return cmdFeed(flags, positional[0] ?? 'help', locale);
+    case 'serve': return cmdServe(flags, locale);
     case 'version': {
       const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')) as { version: string };
       return `spamcha v${pkg.version}`;

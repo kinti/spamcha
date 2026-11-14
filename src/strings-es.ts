@@ -13,6 +13,7 @@ export const stringsEs: Record<string, string> = {
     '  spamcha eval --model R [--rules R] --spam DIR --ham DIR\n' +
     '  spamcha judge [--model R] [--rules R] "texto…"   (o texto por stdin; alias: juzgar)\n' +
     '  spamcha feed help                         canales de inteligencia firmados\n' +
+    '  spamcha serve [--port 8788] [--cors]       servicio HTTP local de veredictos\n' +
     '  spamcha version\n' +
     'Idioma: --locale es|en (por defecto en; también SPAMCHA_LOCALE)',
   'cli.init.created': 'Creado  {path}',
@@ -83,6 +84,11 @@ export const stringsEs: Record<string, string> = {
   'stamp:valid': 'Sello válido',
   'honeypot:empty': 'Trampa vacía',
   'rate:limited': 'Demasiados envíos desde esa dirección: intenta más tarde',
+  'wba:verified': 'Agente de IA verificado (web-bot-auth)',
+  'wba:invalid': 'Firma web-bot-auth inválida: rechazado',
+  'wba:expired': 'Firma web-bot-auth caducada',
+  'wba:absent': 'Falta la firma web-bot-auth',
+  'wba:unknown-agent': 'Agente de firma desconocido (directorio inalcanzable)',
 
   // SPANISH descriptions of the default pack's rules (rules-default.ts carries
   // the English ones — site-editable data).

@@ -49,10 +49,12 @@ export interface ReviewMeta {
   ip?: string;
   /** Server clock, injectable for tests. */
   now?: number;
+  /** Request headers (lowercased) — for the experimental web-bot-auth gate. */
+  headers?: Record<string, string>;
 }
 
 /** Loads downloaded channels; expired ones are skipped (signatures verified at download). */
-function loadFeedChannels(dir: string) {
+function loadFeedChannels(dir: string | undefined) {
   return loadCachedFeeds(dir).channels;
 }
 
@@ -70,8 +72,9 @@ export function createGatekeeper(config: GatekeeperConfig) {
   const limiter: RateLimiter | null = config.rateLimit ? createRateLimiter(config.rateLimit) : null;
 
   /** Base pack (site's own, or the default) fused with downloaded feed channels. */
+  const loadedChannels = loadFeedChannels(config.feedsDir);
   const effectivePack: RulePack | undefined = config.feedsDir
-    ? mergeFeedChannels(config.rulePack ?? defaultRulePack, loadFeedChannels(config.feedsDir))
+    ? mergeFeedChannels(config.rulePack ?? defaultRulePack, loadedChannels)
     : (config.rulePack ?? undefined);
 
   const stripOwnFields = (fields: Record<string, string>): Record<string, string> => {
@@ -87,6 +90,9 @@ export function createGatekeeper(config: GatekeeperConfig) {
   return {
     /** The live model (mutations via resolveQuarantine mutate this object). */
     model,
+
+    /** The downloaded feed channels in force (empty when feedsDir unset). */
+    feeds: loadedChannels,
 
     /** The verdict log, if logPath was configured (the panel feeds on this). */
     log,
@@ -120,7 +126,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
         };
       }
 
-      const verdict = await verifySubmission(fields, model, { ...config, rulePack: effectivePack, now: meta.now });
+      const verdict = await verifySubmission(fields, model, { ...config, rulePack: effectivePack, now: meta.now }, { headers: meta.headers });
       if (verdict.decision === 'quarantine' && quarantine) {
         quarantine.add(stripOwnFields(fields), verdict);
       }

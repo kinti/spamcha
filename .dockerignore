@@ -1,0 +1,16 @@
+node_modules/
+dist/
+test/
+.git/
+.gitignore
+.claves/
+site/
+integrations/
+*.private.b64
+*.pub.b64
+spamcha.json
+spamcha-quarantine.jsonl
+spamcha-log.jsonl
+spamcha.feeds.json
+README.es.md
+*.log

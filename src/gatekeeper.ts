@@ -1,5 +1,7 @@
 // The gatekeeper: the full pipeline for one form submission.
 // GATES (any failure → instant reject, nothing else runs):
+//   0. web-bot-auth (EXPERIMENTAL, optional): a request signed by a known AI
+//      agent skips the stamp gates — content still gets judged.
 //   1. signed, unexpired stamp (HMAC + server clock)
 //   2. time floor: issued→received ≥ minAge (unfakeable)
 //   3. honeypot present and empty (its absence = POST without rendering)
@@ -9,12 +11,13 @@
 
 import type { BayesModel } from './bayes.js';
 import { judge } from './judge.js';
+import { MIN_DOCS_DEFAULT } from './judge.js';
 import { translate } from './locales.js';
 import { verifyStamp } from './stamp.js';
 import type { VerifyStampOptions } from './stamp.js';
+import { verifyWebBotAuth } from './wba.js';
+import type { WebBotAuthHeaders } from './wba.js';
 import type { JudgeOptions, Reason, Verdict } from './types.js';
-
-import { MIN_DOCS_DEFAULT } from "./judge.js";
 
 export interface GatekeeperOptions extends JudgeOptions {
   /** Site HMAC secret. Long and random: a whole sentence works. */
@@ -31,11 +34,22 @@ export interface GatekeeperOptions extends JudgeOptions {
   formId?: string;
   /** Server clock, injectable for tests. */
   now?: number;
+  /**
+   * web-bot-auth (EXPERIMENTAL, draft-ietf-webbotauth): a request carrying a
+   * valid agent signature skips the stamp gates — the judge still reads the
+   * content. `authority` defaults to the request's Host header.
+   */
+  webBotAuth?: { authority?: string; maxAgeSeconds?: number; fetchDirectory?: (url: string) => Promise<unknown> };
 }
 
 export interface SubmissionVerdict extends Verdict {
-  /** Reasons from the silent signals (stamp, honeypot, timing). */
+  /** Reasons from the silent signals (agent, stamp, honeypot, timing). */
   signals: Reason[];
+}
+
+export interface VerifySubmissionMeta {
+  /** Request headers (lowercased, as Node provides them) — for web-bot-auth. */
+  headers?: Record<string, string>;
 }
 
 function phaseOf(model: BayesModel, minDocs?: number): 'cold' | 'trained' {
@@ -47,6 +61,7 @@ export async function verifySubmission(
   fields: Record<string, string>,
   model: BayesModel,
   options: GatekeeperOptions,
+  meta: VerifySubmissionMeta = {},
 ): Promise<SubmissionVerdict> {
   const stampField = options.stampField ?? 'spamcha';
   const honeypotField = options.honeypotField ?? 'website';
@@ -64,33 +79,67 @@ export async function verifySubmission(
     meta: { tokens: 0, fields: Object.keys(fields).length },
   });
 
-  // Gates 1+2: signed stamp, unexpired, with human time since issue.
-  const stampCheck = await verifyStamp(fields[stampField], options.secret, {
-    formId: options.formId,
-    minAgeMs: options.minAgeMs,
-    now: options.now,
-  } satisfies VerifyStampOptions);
-  if (!stampCheck.ok) {
-    return quickReject({ code: stampCheck.reason, text: voice(stampCheck.reason) });
+  // Gate 0 (EXPERIMENTAL): web-bot-auth. A request signed by a known AI agent
+  // proves its operator — the stamp gates exist to make agents prove exactly
+  // that, so a valid signature replaces them. The judge still scores content.
+  if (options.webBotAuth) {
+    const headers: WebBotAuthHeaders = {
+      'signature-agent': meta.headers?.['signature-agent'],
+      signature: meta.headers?.['signature'],
+      'signature-input': meta.headers?.['signature-input'],
+    };
+    if (headers['signature-agent']) {
+      const authority = options.webBotAuth.authority ?? meta.headers?.['host'] ?? '';
+      const wba = await verifyWebBotAuth(headers, {
+        authority,
+        maxAgeSeconds: options.webBotAuth.maxAgeSeconds,
+        fetchDirectory: options.webBotAuth.fetchDirectory,
+        now: options.now !== undefined ? new Date(options.now) : undefined,
+      });
+      if (!wba.ok) {
+        return quickReject({ code: wba.reason, text: voice(wba.reason) });
+      }
+      signals.push({ code: 'wba:verified', text: voice('wba:verified'), detail: wba.agent });
+    }
   }
-  signals.push({ code: 'stamp:valid', text: voice('stamp:valid') });
 
-  // Gate 3: honeypot. If the whole field is missing, nobody rendered the page.
-  const honeypot = fields[honeypotField];
-  if (honeypot !== undefined && honeypot.trim().length > 0) {
-    return quickReject({
-      code: 'honeypot:filled',
-      text: voice('honeypot:filled'),
-      field: honeypotField,
-      detail: honeypot.slice(0, 80),
-    });
-  }
-  if (honeypot === undefined && (options.requireHoneypot ?? true)) {
-    return quickReject({ code: 'honeypot:missing', text: voice('honeypot:missing'), field: honeypotField });
-  }
-  signals.push({ code: 'honeypot:empty', text: voice('honeypot:empty') });
+  if (!signals.some((s) => s.code === 'wba:verified')) {
+    // Gates 1+2: signed stamp, unexpired, with human time since issue.
+    const stampCheck = await verifyStamp(fields[stampField], options.secret, {
+      formId: options.formId,
+      minAgeMs: options.minAgeMs,
+      now: options.now,
+    } satisfies VerifyStampOptions);
+    if (!stampCheck.ok) {
+      return quickReject({ code: stampCheck.reason, text: voice(stampCheck.reason) });
+    }
+    signals.push({ code: 'stamp:valid', text: voice('stamp:valid') });
 
-  // Content: the judge decides over the remaining fields.
+    // Gate 3: honeypot. If the whole field is missing, nobody rendered the page.
+    const honeypot = fields[honeypotField];
+    if (honeypot !== undefined && honeypot.trim().length > 0) {
+      return quickReject({
+        code: 'honeypot:filled',
+        text: voice('honeypot:filled'),
+        field: honeypotField,
+        detail: honeypot.slice(0, 80),
+      });
+    }
+    if (honeypot === undefined && (options.requireHoneypot ?? true)) {
+      return quickReject({ code: 'honeypot:missing', text: voice('honeypot:missing'), field: honeypotField });
+    }
+    signals.push({ code: 'honeypot:empty', text: voice('honeypot:empty') });
+
+    // Content: the judge decides over the remaining fields.
+    const rest: Record<string, string> = {};
+    for (const [k, v] of Object.entries(fields)) {
+      if (k !== stampField && k !== honeypotField) rest[k] = v;
+    }
+    const verdict = judge(rest, model, options);
+    return { ...verdict, signals };
+  }
+
+  // Trusted-agent path: judge the content, keep the verified-agent signal.
   const rest: Record<string, string> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (k !== stampField && k !== honeypotField) rest[k] = v;

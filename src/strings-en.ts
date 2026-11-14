@@ -12,6 +12,7 @@ export const stringsEn: Record<string, string> = {
     '  spamcha eval --model R [--rules R] --spam DIR --ham DIR\n' +
     '  spamcha judge [--model R] [--rules R] "text…"   (or text via stdin)\n' +
     '  spamcha feed help                         signed intelligence channels\n' +
+    '  spamcha serve [--port 8788] [--cors]       local verdict HTTP service\n' +
     '  spamcha version\n' +
     'Language: --locale es|en (default en; also SPAMCHA_LOCALE)',
   'cli.init.created': 'Created  {path}',
@@ -82,6 +83,11 @@ export const stringsEn: Record<string, string> = {
   'stamp:valid': 'Valid stamp',
   'honeypot:empty': 'Honeypot empty',
   'rate:limited': 'Too many submissions from that address: try again later',
+  'wba:verified': 'Verified AI agent signature (web-bot-auth)',
+  'wba:invalid': 'Invalid web-bot-auth signature: rejected',
+  'wba:expired': 'Expired web-bot-auth signature',
+  'wba:absent': 'Missing web-bot-auth signature',
+  'wba:unknown-agent': 'Unknown signature agent (directory unreachable)',
 
   // Default-pack rule descriptions
   'rule.spam-words': 'Classic spam keywords',
