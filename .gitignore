@@ -3,16 +3,22 @@ dist/
 *.log
 .DS_Store
 
-#Datos privados: corpus real y modelo entrenado (nunca en un repo público)
-spamcha.json
-ham/
-spam/
-eval-ham/
-eval-spam/
-corpus/
-spamcha-quarantine.jsonl
-.claves/
-*.priv.b64
-spamcha.feeds.json
+# Datos privados del SITIO (raíz del proyecto — patrones anclados a raíz,
+# para que no traguen test/fixtures):
+/spamcha.json
+/spamcha-quarantine.jsonl
+/spamcha-log.jsonl
+/spamcha.feeds.json
+/spamcha.config.json
+/corpus/
+/ham/
+/spam/
+/eval-ham/
+/eval-spam/
+/.claves/
 *.private.b64
-spamcha.config.json
+*.priv.b64
+
+# Los fixtures de test SÍ van al repo (son sintéticos, sin datos reales):
+!/test/fixtures/
+!/test/fixtures/**
