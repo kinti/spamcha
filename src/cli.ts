@@ -5,11 +5,14 @@
 // English ships as translation. Command names are international; `juzgar`
 // survives as an alias out of respect for muscle memory.
 
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { createModel } from './bayes.js';
 import type { BayesModel } from './bayes.js';
+import { generateFeedKeyPair, mergeFeedChannels, signFeed, verifyFeed } from './feed.js';
+import type { FeedChannel } from './feed.js';
 import { judge, trainFields } from './judge.js';
 import { isLocale, DEFAULT_LOCALE, translate } from './locales.js';
 import type { Locale } from './locales.js';
@@ -19,6 +22,8 @@ import type { Label, RulePack } from './types.js';
 
 const DEFAULT_MODEL = 'spamcha.json';
 const DEFAULT_RULES_FILE = 'rules-es.json';
+const DEFAULT_FEEDS_CONFIG = 'spamcha.feeds.json';
+const DEFAULT_FEEDS_DIR = 'feeds';
 
 interface FileEntry {
   path: string;
@@ -91,6 +96,145 @@ function packOf(flags: Record<string, string | boolean>): RulePack {
   return defaultRulePack;
 }
 
+// ─── Feeds: canales de inteligencia firmados ────────────────────────────────
+
+interface CanalConfig {
+  nombre: string;
+  url: string;
+  publicKey?: string;
+}
+
+function rutaCanales(flags: Record<string, string | boolean>): string {
+  return pathOf(flags, 'config', DEFAULT_FEEDS_CONFIG);
+}
+
+function leerCanales(ruta: string): CanalConfig[] {
+  if (!existsSync(ruta)) return [];
+  const parsed = JSON.parse(readFileSync(ruta, 'utf8')) as CanalConfig[];
+  if (!Array.isArray(parsed)) throw new Error(`File ${ruta} is not a channel list`);
+  return parsed;
+}
+
+function escribirCanales(ruta: string, canales: CanalConfig[]): void {
+  if (canales.length > 0) mkdirSync(dirname(ruta), { recursive: true });
+  writeFileSync(ruta, JSON.stringify(canales, null, 2), 'utf8');
+}
+
+/** Carga los feeds descargados del directorio; omite los caducados (avisando).
+ *  La firma ya se verificó contra la clave fijada en `feed update` — aquí solo
+ *  se re-chequea la caducidad (síncrono, sin promesas en el arranque). */
+function feedsCargados(dirFeeds: string, idioma: Locale): { channels: FeedChannel[]; avisos: string[] } {
+  const avisos: string[] = [];
+  if (!existsSync(dirFeeds)) return { channels: [], avisos };
+  const channels: FeedChannel[] = [];
+  const ahora = Date.now();
+  for (const nombre of readdirSync(dirFeeds).sort()) {
+    if (!nombre.endsWith('.json')) continue;
+    try {
+      const ch = JSON.parse(readFileSync(join(dirFeeds, nombre), 'utf8')) as FeedChannel;
+      const caducado = Number.isNaN(Date.parse(ch.expiresAt)) || ahora >= Date.parse(ch.expiresAt);
+      if (caducado) {
+        avisos.push(translate('cli.feed.skipped-expired', { locale: idioma, vars: { channel: ch.channel ?? nombre } }));
+        continue;
+      }
+      channels.push(ch);
+    } catch {
+      avisos.push(translate('cli.feed.skipped-expired', { locale: idioma, vars: { channel: nombre } }));
+    }
+  }
+  return { channels, avisos };
+}
+
+function packEfectivo(flags: Record<string, string | boolean>, idioma: Locale): { pack: RulePack; avisos: string[] } {
+  const base = packOf(flags);
+  const { channels, avisos } = feedsCargados(pathOf(flags, 'feeds-dir', DEFAULT_FEEDS_DIR), idioma);
+  return { pack: mergeFeedChannels(base, channels), avisos };
+}
+
+async function cmdFeed(flags: Record<string, string | boolean>, sub: string, idioma: Locale): Promise<string> {
+  const t = (code: string, vars?: Record<string, string | number>): string => translate(code, { locale: idioma, vars });
+  const rutaConfig = rutaCanales(flags);
+  switch (sub) {
+    case 'keygen': {
+      const par = await generateFeedKeyPair();
+      const rutaPrivada = pathOf(flags, 'privada', 'feed-es.priv.b64');
+      const rutaPublica = pathOf(flags, 'publica', 'feed-es.pub.b64');
+      mkdirSync(dirname(rutaPrivada), { recursive: true });
+      mkdirSync(dirname(rutaPublica), { recursive: true });
+      writeFileSync(rutaPrivada, par.private, 'utf8');
+      writeFileSync(rutaPublica, par.public, 'utf8');
+      return t('cli.feed.keygen', { privada: rutaPrivada, publica: rutaPublica });
+    }
+    case 'sign': {
+      const archivo = pathOf(flags, 'archivo', '');
+      if (archivo.length === 0) throw new Error('sign necesita --archivo feed.json');
+      const privada = pathOf(flags, 'privada', 'feed-es.priv.b64');
+      const canal = JSON.parse(readFileSync(archivo, 'utf8')) as FeedChannel;
+      if (typeof canal.channel !== 'string' || !Array.isArray(canal.rules)) {
+        throw new Error(`File ${archivo} is not a feed channel`);
+      }
+      const { signature, ...resto } = canal;
+      const firmado = await signFeed(resto, readFileSync(privada, 'utf8').trim());
+      writeFileSync(archivo, JSON.stringify(firmado, null, 2) + '\n', 'utf8');
+      return t('cli.feed.firmado', { path: archivo, version: firmado.version, expiresAt: firmado.expiresAt });
+    }
+    case 'add': {
+      const nombre = typeof flags['nombre'] === 'string' ? flags['nombre'] : '';
+      const url = typeof flags['url'] === 'string' ? flags['url'] : '';
+      if (nombre.length === 0 || url.length === 0) throw new Error('add necesita --nombre N --url URL');
+      const canales = leerCanales(rutaConfig);
+      const publicKey = typeof flags['publica'] === 'string' ? readFileSync(flags['publica'], 'utf8').trim() : undefined;
+      const nuevos = canales.filter((c) => c.nombre !== nombre).concat({ nombre, url, publicKey });
+      escribirCanales(rutaConfig, nuevos);
+      return t('cli.feed.added', { nombre, url });
+    }
+    case 'list': {
+      const canales = leerCanales(rutaConfig);
+      if (canales.length === 0) return t('cli.feed.empty');
+      return canales
+        .map((c) => t('cli.feed.listed', { nombre: c.nombre, url: c.url, clave: c.publicKey ? ' [clave fijada]' : '' }))
+        .join('\n');
+    }
+    case 'update': {
+      const canales = leerCanales(rutaConfig);
+      if (canales.length === 0) return t('cli.feed.empty');
+      const dirFeeds = pathOf(flags, 'dir', DEFAULT_FEEDS_DIR);
+      mkdirSync(dirFeeds, { recursive: true });
+      const lineas: string[] = [];
+      for (const canal of canales) {
+        const respuesta = await fetch(canal.url);
+        if (!respuesta.ok) {
+          lineas.push(t('cli.feed.bad-signature', { nombre: `${canal.nombre} (HTTP ${respuesta.status})` }));
+          continue;
+        }
+        const ch = (await respuesta.json()) as FeedChannel;
+        const verificacion = await verifyFeed(ch, canal.publicKey);
+        if (!verificacion.ok) {
+          lineas.push(
+            verificacion.reason === 'feed:caducado'
+              ? t('cli.feed.updated-caducado', { nombre: canal.nombre, expiresAt: ch.expiresAt })
+              : t('cli.feed.bad-signature', { nombre: canal.nombre }),
+          );
+          continue;
+        }
+        const destino = join(dirFeeds, `${canal.nombre}.json`);
+        const cacheado = existsSync(destino) ? (JSON.parse(readFileSync(destino, 'utf8')) as FeedChannel) : null;
+        if (cacheado && cacheado.version >= ch.version) {
+          lineas.push(t('cli.feed.unchanged', { nombre: canal.nombre, version: ch.version }));
+          continue;
+        }
+        writeFileSync(destino, JSON.stringify(ch, null, 2) + '\n', 'utf8');
+        lineas.push(
+          t('cli.feed.updated', { nombre: canal.nombre, version: ch.version, rules: ch.rules.length, domains: ch.domains?.length ?? 0 }),
+        );
+      }
+      return lineas.join('\n');
+    }
+    case 'help': case '': return t('cli.feed.help');
+    default: throw new Error(`Unknown feed subcommand: ${sub}\n${t('cli.feed.help')}`);
+  }
+}
+
 function inputText(flags: Record<string, string | boolean>, positional: string[]): string {
   if (positional.length > 0) return positional.join(' ');
   return readFileSync(0, 'utf8'); // stdin
@@ -147,7 +291,7 @@ async function cmdTrain(flags: Record<string, string | boolean>, locale: Locale)
 async function cmdEval(flags: Record<string, string | boolean>, locale: Locale): Promise<string> {
   const t = (code: string, vars?: Record<string, string | number>): string => translate(code, { locale, vars });
   const model = loadModel(pathOf(flags, 'model', DEFAULT_MODEL));
-  const pack = packOf(flags);
+  const { pack, avisos } = packEfectivo(flags, locale);
   const spamDir = flags['spam'];
   const hamDir = flags['ham'];
   if (typeof spamDir !== 'string' || typeof hamDir !== 'string') {
@@ -182,12 +326,13 @@ async function cmdEval(flags: Record<string, string | boolean>, locale: Locale):
     t('cli.eval.metrics', { precision: (precision * 100).toFixed(1), recall: (recall * 100).toFixed(1), f1: f1.toFixed(3) }),
   ];
   if (mistakes.length > 0) lines.push(t('cli.eval.errors'), ...mistakes);
+  if (avisos.length > 0) lines.push('', ...avisos);
   return lines.join('\n');
 }
 
 async function cmdJudge(flags: Record<string, string | boolean>, positional: string[], locale: Locale): Promise<string> {
   const model = loadModel(pathOf(flags, 'model', DEFAULT_MODEL));
-  const pack = packOf(flags);
+  const { pack } = packEfectivo(flags, locale);
   const text = inputText(flags, positional);
   const verdict = judge(text, model, { rulePack: pack, locale });
   return JSON.stringify(verdict, null, 2);
@@ -202,6 +347,7 @@ export async function run(args: string[]): Promise<string> {
     case 'train': return cmdTrain(flags, locale);
     case 'eval': return cmdEval(flags, locale);
     case 'judge': case 'juzgar': return cmdJudge(flags, positional, locale);
+    case 'feed': return cmdFeed(flags, positional[0] ?? 'help', locale);
     case 'version': {
       const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')) as { version: string };
       return `spamcha v${pkg.version}`;

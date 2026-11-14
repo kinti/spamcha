@@ -175,6 +175,29 @@ guard.discardQuarantine(id);         // delete without teaching
 
 `npm run demo` includes a ready-made review page (`/revision`) with the three buttons — open it, mark a held submission as garbage, and watch the model stats change. Each site's corpus stays in its own JSONL file and its own model: your users' words never leave the server.
 
+## Feeds: the shared bloodstream (OpenWRT-style channels)
+
+Local learning + shared recipes. Each site trains its own bayes (private, stays home), but nobody has to discover the same spam wave alone: curated **rule channels** — signed JSON files at a URL — get pulled, verified and fused into the judge.
+
+What travels through a feed: hand-written **rules** and **spam link domains**. What never travels: your bayes model, your corpus, your users' content.
+
+```sh
+# Producer (the channel owner, e.g. you for your own fleet):
+spamcha feed keygen --privada .claves/feed-es.priv.b64 --publica feeds/oficial-es.pub.b64
+# …edit feeds/oficial-es.json (rules + domains + version + expiresAt)…
+spamcha feed sign --archivo feeds/oficial-es.json --privada .claves/feed-es.priv.b64
+# host the file anywhere static (spamcha.com/feeds/… works fine)
+
+# Consumer (every site):
+spamcha feed add --nombre oficial-es --url https://spamcha.com/feeds/oficial-es.json \
+  --publica feeds/oficial-es.pub.b64
+spamcha feed update        # cron this: fetch + verify signature + version check
+```
+
+Then `judge`, `eval` and the guard fuse the channels automatically (`--feeds-dir` / `feedsDir`). Trust model: **Ed25519 signatures with the public key pinned locally** (a compromised feed host can't poison you), monotonic versions, and feeds **expire on purpose** — stale intel is a liability, producers must refresh.
+
+A quarantine reason always says who sent the rule: `rule:feed:oficial/es:seo-slop-es`.
+
 ## How it decides
 
 Two signals, fused:
@@ -216,7 +239,7 @@ eval-spam/
 
 ```sh
 npm install
-npm test        # vitest, 92 tests
+npm test        # vitest, 103 tests
 npm run build   # tsc → dist/
 npm run demo    # local contact server on :8787
 ```

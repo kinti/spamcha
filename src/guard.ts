@@ -4,19 +4,23 @@
 // the rate limiter and the stamp issuer. node:fs is why this file exists
 // separate from gatekeeper.ts (which stays isomorphic).
 
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { createModel } from './bayes.js';
 import type { BayesModel } from './bayes.js';
+import { mergeFeedChannels } from './feed.js';
+import type { FeedChannel } from './feed.js';
 import { trainFields } from './judge.js';
 import { translate } from './locales.js';
 import type { Locale } from './locales.js';
+import { defaultRulePack } from './rules-es.js';
 import { QuarantineStore } from './quarantine.js';
 import { createRateLimiter } from './rate-limit.js';
 import type { RateLimiter } from './rate-limit.js';
 import { verifySubmission } from './gatekeeper.js';
 import { issueStamp, stampFieldsHtml } from './stamp.js';
 import { loadModel, saveModel } from './storage.js';
-import type { Label } from './types.js';
+import type { Label, RulePack } from './types.js';
 import type { GatekeeperOptions, SubmissionVerdict } from './gatekeeper.js';
 
 export interface GatekeeperConfig extends GatekeeperOptions {
@@ -28,6 +32,12 @@ export interface GatekeeperConfig extends GatekeeperOptions {
   rateLimit?: { max: number; windowMs: number };
   /** Stamp lifetime (default 30 minutes). */
   ttlMs?: number;
+  /**
+   * Directory with downloaded feed channels (feeds/*.json, from
+   * `spamcha feed update`). Expired channels are skipped; signatures were
+   * already verified at download time against the pinned key.
+   */
+  feedsDir?: string;
 }
 
 export interface ReviewMeta {
@@ -35,6 +45,25 @@ export interface ReviewMeta {
   ip?: string;
   /** Server clock, injectable for tests. */
   now?: number;
+}
+
+/** Loads downloaded channels; expired ones are skipped (signatures verified at download). */
+function loadFeedChannels(dir: string): FeedChannel[] {
+  if (!existsSync(dir)) return [];
+  const channels: FeedChannel[] = [];
+  const now = Date.now();
+  for (const name of readdirSync(dir).sort()) {
+    if (!name.endsWith('.json')) continue;
+    try {
+      const ch = JSON.parse(readFileSync(join(dir, name), 'utf8')) as FeedChannel;
+      if (!Number.isNaN(Date.parse(ch.expiresAt)) && now < Date.parse(ch.expiresAt)) {
+        channels.push(ch);
+      }
+    } catch {
+      // corrupt cache file: skip it, the rest stays usable
+    }
+  }
+  return channels;
 }
 
 export function createGatekeeper(config: GatekeeperConfig) {
@@ -48,6 +77,11 @@ export function createGatekeeper(config: GatekeeperConfig) {
 
   const quarantine = config.quarantinePath ? new QuarantineStore(config.quarantinePath) : null;
   const limiter: RateLimiter | null = config.rateLimit ? createRateLimiter(config.rateLimit) : null;
+
+  /** Base pack (site's own, or the default) fused with downloaded feed channels. */
+  const effectivePack: RulePack | undefined = config.feedsDir
+    ? mergeFeedChannels(config.rulePack ?? defaultRulePack, loadFeedChannels(config.feedsDir))
+    : (config.rulePack ?? undefined);
 
   const stripOwnFields = (fields: Record<string, string>): Record<string, string> => {
     const stampField = config.stampField ?? 'spamcha';
@@ -92,7 +126,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
         };
       }
 
-      const verdict = await verifySubmission(fields, model, { ...config, now: meta.now });
+      const verdict = await verifySubmission(fields, model, { ...config, rulePack: effectivePack, now: meta.now });
       if (verdict.decision === 'quarantine' && quarantine) {
         quarantine.add(stripOwnFields(fields), verdict);
       }

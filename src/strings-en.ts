@@ -11,6 +11,7 @@ export const stringsEn: Record<string, string> = {
     '  spamcha train --model R [--spam DIR] [--ham DIR]\n' +
     '  spamcha eval --model R [--rules R] --spam DIR --ham DIR\n' +
     '  spamcha judge [--model R] [--rules R] "text…"   (or text via stdin; alias: juzgar)\n' +
+    '  spamcha feed help                         signed intelligence channels\n' +
     '  spamcha version\n' +
     'Language: --locale es|en (default es; also SPAMCHA_LOCALE)',
   'cli.init.created': 'Created  {path}',
@@ -27,6 +28,25 @@ export const stringsEn: Record<string, string> = {
   'cli.eval.needs': 'eval needs --spam DIR and --ham DIR',
   'cli.error.command': 'Unknown command: {command}',
   'cli.error.locale': 'Unsupported language: {locale} (available: es, en)',
+
+  // Feeds (signed intelligence channels, OpenWRT-style)
+  'cli.feed.keygen': 'Ed25519 key pair generated:\n  private (do NOT share): {privada}\n  public (pin on the sites): {publica}',
+  'cli.feed.firmado': 'Channel signed: {path} (version {version}, expires {expiresAt})',
+  'cli.feed.added': 'Channel {nombre} added → {url}',
+  'cli.feed.listed': '{nombre} → {url}{clave}',
+  'cli.feed.empty': 'No subscribed channels. Add one: spamcha feed add --nombre oficial-es --url …',
+  'cli.feed.updated': '{nombre}: version {version} ({rules} rules, {domains} domains)',
+  'cli.feed.updated-caducado': '{nombre}: EXPIRED, skipped (expired {expiresAt})',
+  'cli.feed.unchanged': '{nombre}: unchanged (version {version})',
+  'cli.feed.bad-signature': '{nombre}: INVALID SIGNATURE — channel rejected (wrong key or tampered file?)',
+  'cli.feed.skipped-expired': 'Expired feed skipped: {channel}',
+  'cli.feed.help':
+    'Feeds — signed intelligence channels:\n' +
+    '  spamcha feed keygen --privada k.b64 --publica k.pub.b64\n' +
+    '  spamcha feed sign --archivo feed.json --privada k.b64\n' +
+    '  spamcha feed add --nombre N --url URL [--publica k.pub.b64] [--config C]\n' +
+    '  spamcha feed list [--config C]\n' +
+    '  spamcha feed update [--config C] [--dir feeds/]',
 
   // Silent signals
   'stamp:missing': 'No stamp was attached: POST straight at the server without rendering the form',

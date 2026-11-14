@@ -1,0 +1,40 @@
+{
+  "channel": "oficial/es",
+  "version": 1,
+  "updatedAt": "2026-11-14T00:00:00Z",
+  "expiresAt": "2027-05-13T00:00:00Z",
+  "description": "Canal oficial DEMO — reglas de arranque para webs en español. El patrón bogofilter aplicado a formularios: tu bayes aprende lo tuyo, este canal trae lo del gremio. Edítalo para tu sitio.",
+  "rules": [
+    {
+      "id": "seo-slop-es",
+      "type": "count",
+      "pattern": "posicion(?:amiento)?\\s+en\\s+google|backlinks\\s+(?:premium|baratos)",
+      "threshold": 1,
+      "weight": 3,
+      "description": "Slop de SEO en español"
+    },
+    {
+      "id": "cripto-es",
+      "type": "count",
+      "pattern": "invierte\\s+en\\s+cripto|duplica\\s+tu\\s+(?:bitcoin|inversi)",
+      "threshold": 1,
+      "weight": 3,
+      "description": "Cripto-scam en español"
+    },
+    {
+      "id": "farma-es",
+      "type": "count",
+      "pattern": "farmacia\\s+online|sin\\s+receta",
+      "threshold": 1,
+      "weight": 3,
+      "description": "Farmacia online"
+    }
+  ],
+  "domains": [
+    "spam1.xyz",
+    "pillshop.icu",
+    "casino-bonus.top",
+    "seo-king.xyz"
+  ],
+  "signature": "ed25519:0B8URoBn9JEnae5IjtD8D-2fr638iy1ecct2dqU3qfjhj7xym2R54IPHxA-5wpmOPdi3zvCtWvP6N5PAk4ZaDA"
+}

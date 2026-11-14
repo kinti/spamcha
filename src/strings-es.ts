@@ -11,6 +11,7 @@ export const stringsEs: Record<string, string> = {
     '  spamcha train --model R [--spam DIR] [--ham DIR]\n' +
     '  spamcha eval --model R [--rules R] --spam DIR --ham DIR\n' +
     '  spamcha judge [--model R] [--rules R] "texto…"   (o texto por stdin; alias: juzgar)\n' +
+    '  spamcha feed help                         canales de inteligencia firmados\n' +
     '  spamcha version\n' +
     'Idioma: --locale es|en (por defecto es; también SPAMCHA_LOCALE)',
   'cli.init.created': 'Creado  {path}',
@@ -27,6 +28,25 @@ export const stringsEs: Record<string, string> = {
   'cli.eval.needs': 'eval necesita --spam DIR y --ham DIR',
   'cli.error.command': 'Comando desconocido: {command}',
   'cli.error.locale': 'Idioma no soportado: {locale} (disponibles: es, en)',
+
+  // Feeds (canales de inteligencia firmados, estilo OpenWRT)
+  'cli.feed.keygen': 'Par de claves Ed25519 generado:\n  privada (NO compartir): {privada}\n  pública (fijar en las webs): {publica}',
+  'cli.feed.firmado': 'Canal firmado: {path} (versión {version}, caduca {expiresAt})',
+  'cli.feed.added': 'Canal {nombre} añadido → {url}',
+  'cli.feed.listed': '{nombre} → {url}{clave}',
+  'cli.feed.empty': 'Sin canales suscritos. Añade uno: spamcha feed add --nombre oficial-es --url …',
+  'cli.feed.updated': '{nombre}: versión {version} ({rules} reglas, {domains} dominios)',
+  'cli.feed.updated-caducado': '{nombre}: CADUCADO, omitido (caducó {expiresAt})',
+  'cli.feed.unchanged': '{nombre}: sin cambios (versión {version})',
+  'cli.feed.bad-signature': '{nombre}: FIRMA INVÁLIDA — canal rechazado (¿clave equivocada o archivo manipulado?)',
+  'cli.feed.skipped-expired': 'Feed caducado omitido: {channel}',
+  'cli.feed.help':
+    'Feeds — canales de inteligencia firmados:\n' +
+    '  spamcha feed keygen --privada k.b64 --publica k.pub.b64\n' +
+    '  spamcha feed sign --archivo feed.json --privada k.b64\n' +
+    '  spamcha feed add --nombre N --url URL [--publica k.pub.b64] [--config C]\n' +
+    '  spamcha feed list [--config C]\n' +
+    '  spamcha feed update [--config C] [--dir feeds/]',
 
   // Silent signals (what the site owner reads in the verdict)
   'stamp:missing': 'Nadie trajo el sello: POST directo al servidor sin renderizar el formulario',

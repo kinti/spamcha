@@ -11,3 +11,6 @@ eval-ham/
 eval-spam/
 corpus/
 spamcha-quarantine.jsonl
+.claves/
+*.priv.b64
+spamcha.feeds.json

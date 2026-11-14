@@ -34,6 +34,8 @@ export { verifySubmission } from './gatekeeper.js';
 export type { GatekeeperOptions, SubmissionVerdict } from './gatekeeper.js';
 export { createGatekeeper } from './guard.js';
 export type { Gatekeeper, GatekeeperConfig, ReviewMeta } from './guard.js';
+export { canonical, generateFeedKeyPair, mergeFeedChannels, signFeed, verifyFeed } from './feed.js';
+export type { FeedChannel, FeedToSign, FeedVerification } from './feed.js';
 export { middlewareExpress, middlewareHono } from './adapters.js';
 export { verifyAltchaSolution } from './altcha.js';
 export type { AltchaOptions, AltchaPayload, AltchaVerification } from './altcha.js';
