@@ -167,6 +167,12 @@ Behavior: `reject` → the middleware answers 403 with the verdict JSON and your
 ## The feedback loop: the "this was garbage" button
 
 This is the part nobody else ships: the quarantined submissions get stored locally, the site owner reviews them, and **the judge trains on the spot**.
+Clean passes also self-train as ham automatically (`autoHam`) — the site's real traffic builds the other class by itself.
+
+**The measured learning curve on a novel spam family** (no rules fire, six variants, four real ham messages):
+day 0 → **0/6 caught** (honest: rules miss it); after the owner marks 1 → 1/6; after marking 3 → **6/6, zero false positives**,
+via the green-phase booster: a small bayes that is *this* convinced holds submissions for review instead of passing them.
+Rules-only systems (mosparo, form-guard, honeypot plugins) stay at 0/6 forever — not worse tuning, a missing capability.
 
 ```ts
 guard.listQuarantine();          // held submissions awaiting review

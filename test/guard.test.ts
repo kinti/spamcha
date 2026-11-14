@@ -134,6 +134,19 @@ describe('createGatekeeper', () => {
     expect(otra.decision).not.toBe('reject');
   });
 
+  it('auto-ham: a clean pass trains the ham side by itself', async () => {
+    const { guard, dir } = guardDePrueba();
+    const token = await guard.stampToken();
+    const antes = guard.model.docs.ham;
+    const v = await guard.review(
+      { nombre: 'Carmen', mensaje: 'Hola, quería preguntar el precio', spamcha: token, website: '' },
+      { ip: '10.6.6.1', now: Date.now() + 4_000 },
+    );
+    expect(v.decision).toBe('pass');
+    expect(guard.model.docs.ham).toBe(antes + 1);
+    expect(JSON.parse(readFileSync(join(dir, 'spamcha.json'), 'utf8'))).toMatchObject({ docs: { ham: antes + 1 } });
+  });
+
   it('stampHtml paints the two hidden fields', async () => {
     const { guard } = guardDePrueba();
     const html = await guard.stampHtml();

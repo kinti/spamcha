@@ -167,6 +167,12 @@ Comportamiento: `reject` → el middleware contesta 403 con el veredicto JSON y 
 ## El bucle de feedback: el botón "esto era mierda"
 
 Esta es la parte que nadie más entrega: los envíos en cuarentena se guardan localmente, el dueño los revisa y **el juez entrena al momento**.
+Los pases limpios también auto-entrenan como ham (`autoHam`) — el tráfico real del sitio construye la otra clase solo.
+
+**La curva de aprendizaje medida sobre una familia de spam nueva** (sin reglas que la pillen, seis variantes, cuatro hams reales):
+día 0 → **0/6 cazados** (honesto: las reglas no la ven); tras marcar 1 → 1/6; tras marcar 3 → **6/6, cero falsos positivos**,
+gracias al booster de fase verde: un bayes pequeño pero *convencido* retiene para revisión en vez de dejar pasar.
+Los sistemas solo-reglas (mosparo, form-guard, plugins honeypot) se quedan en 0/6 para siempre — no es peor ajuste, es una capacidad que falta.
 
 ```ts
 guard.listQuarantine();             // envíos retenidos esperando revisión

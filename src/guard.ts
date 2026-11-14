@@ -46,6 +46,9 @@ export interface GatekeeperConfig extends GatekeeperOptions {
   maxFieldLength?: number;
   /** Log rotation: keep only the newest N entries (default 1.000). */
   logMaxEntries?: number;
+  /** Weak-train clean passes as ham automatically (default true): the site's
+   *  real traffic builds the ham corpus by itself. */
+  autoHam?: boolean;
 }
 
 export interface ReviewMeta {
@@ -138,6 +141,12 @@ export function createGatekeeper(config: GatekeeperConfig) {
     replayCache: config.singleUseStamps === false ? undefined : replayCache,
     maxFieldLength: config.maxFieldLength ?? 20_000,
   }, { headers: meta.headers });
+      // auto-ham: a pass with zero fired rules is near-certainly real mail —
+      // the site's own traffic builds the ham corpus without anyone clicking.
+      if (config.autoHam !== false && verdict.decision === 'pass' && verdict.rules === 0) {
+        trainFields(model, stripOwnFields(fields), 'ham');
+        if (config.modelPath) saveModel(model, config.modelPath);
+      }
       if (verdict.decision === 'quarantine' && quarantine) {
         quarantine.add(stripOwnFields(fields), verdict);
       }

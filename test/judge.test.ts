@@ -127,6 +127,23 @@ describe('judge', () => {
     expect(corto.rules).toBeGreaterThanOrEqual(3);
   });
 
+  it('green booster: a small CONVINCED bayes quarantines a novel family without rules', () => {
+    // 2 ham reales de historia + 1 variante marcada como basura → la familia
+    // comparte tokens y el booster verde la retiene para revisión
+    const m = createModel();
+    train(m, tokenize('hola quería saber el precio del curso gracias'), 'ham');
+    train(m, tokenize('buenas tardes me gustaría pedir presupuesto saludos'), 'ham');
+    const familia = 'Buenas! Escribimos contenido unico para tu blog con enlaces incluidos sin coste http://guest-post-1.example';
+    const variante = 'Hola admin, te ofrezco articulos con enlaces de nuestros clientes sin coste http://guest-post-2.example';
+    train(m, tokenize(familia), 'spam');
+    const v = judge(variante, m);
+    expect(v.decision).toBe('quarantine');
+    expect(v.reasons.some((r) => r.code === 'bayes-arranque')).toBe(true);
+    // y un ham real no lo dispara
+    const ham = judge('Hola, quería preguntar el precio', m);
+    expect(ham.decision).toBe('pass');
+  });
+
   it('the default pack ships built in', () => {
     expect(defaultRulePack.rules.length).toBeGreaterThanOrEqual(6);
     expect(defaultRulePack.name).toBe('default');

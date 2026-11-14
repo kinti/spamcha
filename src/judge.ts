@@ -68,7 +68,8 @@ export function judge(
 
   const trained = model.docs.spam >= minDocs && model.docs.ham >= minDocs;
   let bayesProbability: number | null = null;
-  if (trained) {
+  const bothClassesSeen = model.docs.spam > 0 && model.docs.ham > 0;
+  if (trained || bothClassesSeen) {
     bayesProbability = probability(model, tokens);
     if (bayesProbability !== null) {
       reasons.push({ code: 'bayes', detail: bayesProbability.toFixed(3) });
@@ -84,7 +85,7 @@ export function judge(
     trained && bayesProbability !== null
       ? bayesWeight * Math.min(1, Math.min(model.docs.spam, model.docs.ham) / DOCS_TARGET)
       : 0;
-  const fused =
+  let fused =
     effectiveBayesWeight > 0
       ? Math.min(1, Math.max(0, effectiveBayesWeight * bayesProbability! + (1 - effectiveBayesWeight) * rulesProbability_))
       : rulesProbability_;
@@ -94,9 +95,25 @@ export function judge(
   if (fused >= thresholds.reject) decision = 'reject';
   else if (fused >= thresholds.quarantine) decision = 'quarantine';
 
+  // Green-phase booster: a small but CONVINCED bayes quarantines even without
+  // rules (novel spam family: 2-3 marked examples + the site's own ham history
+  // already present). Quarantine is reviewable — a false positive costs one
+  // click; a false negative costs another month of the same slop in the inbox.
+  const greenThreshold = options.greenQuarantine ?? 0.9;
+  let boosted = false;
+  if (!trained && bayesProbability !== null && bayesProbability >= greenThreshold && decision === 'pass') {
+    decision = 'quarantine';
+    fused = Math.max(fused, bayesProbability);
+    boosted = true;
+    reasons.push({
+      code: 'bayes-arranque',
+      detail: `bayes verde convencido (${bayesProbability.toFixed(3)}) → cuarentena revisable`,
+    });
+  }
+
   return {
     decision,
-    probability: fused,
+    probability: boosted ? fused : fused,
     bayes: bayesProbability,
     rules: rulesOutcome.weight,
     phase: trained ? 'trained' : 'cold',

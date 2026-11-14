@@ -54,6 +54,9 @@ export interface JudgeOptions {
   locale?: 'es' | 'en';
   /** Truncate each field to this many characters before judging (DoS bound). */
   maxFieldLength?: number;
+  /** Green-phase bayes quarantine floor (default 0.9): a small corpus THIS
+   *  convinced holds submissions for review instead of passing them. */
+  greenQuarantine?: number;
 }
 
 /** One declarative rule of a pack. Three types, all regex-based: */
