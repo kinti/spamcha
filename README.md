@@ -196,6 +196,8 @@ spamcha feed add --nombre oficial-es --url https://spamcha.com/feeds/oficial-es.
 spamcha feed update        # cron this: fetch + verify signature + version check
 ```
 
+**The pinned key is required**: `feed add` demands `--public` unless you pass `--unsigned` explicitly. Without a pinned key, `update` would cache anything the URL serves — that's the trust anchor of the whole channel model.
+
 Then `judge`, `eval` and the guard fuse the channels automatically (`--feeds-dir` / `feedsDir`). Trust model: **Ed25519 signatures with the public key pinned locally** (a compromised feed host can't poison you), monotonic versions, and feeds **expire on purpose** — stale intel is a liability, producers must refresh.
 
 A quarantine reason always says who sent the rule: `rule:feed:oficial/es:seo-slop-es`.
@@ -253,6 +255,12 @@ eval-spam/
 - The default rule pack is a starting point for Spanish-language contact forms; tune `rules-es.json` per site. A rule with `field` only fires on that field.
 - The judge reads text. It does not do IP reputation, rate limiting or behavioral signals — those live in the other layers of the stack.
 - The model is a plain JSON file: portable, inspectable, git-friendly (and exactly why it should stay out of public repos). Persistence uses `node:fs`; in the browser use the pure functions (`tokenize`, `probability`, `judge`) with a model served as JSON.
+
+## Roadmap (documented as pending)
+
+- `spamcha serve`: the verdict pipeline as a local HTTP service — the door for PHP/Python/WordPress backends (mode 2 universality) and for a WordPress plugin; a Docker image wraps it.
+- web-bot-auth verifier: signed agents skip the PoW gate, still get judged.
+- Public benchmark corpus (`spamcha-bench`), starter model, sector feed packs.
 
 ## Development
 

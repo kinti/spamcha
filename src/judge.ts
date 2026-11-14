@@ -6,6 +6,7 @@
 import { probability, train } from './bayes.js';
 import type { BayesModel } from './bayes.js';
 import { evaluateRules } from './rules.js';
+import type { RulesOutcome } from './rules.js';
 import { defaultRulePack } from './rules-default.js';
 import { tokenize } from './tokenizer.js';
 import type { Decision, Label, JudgeOptions, Reason, Verdict } from './types.js';
@@ -13,6 +14,8 @@ import type { Decision, Label, JudgeOptions, Reason, Verdict } from './types.js'
 const DEFAULT_THRESHOLDS = { quarantine: 0.5, reject: 0.85 };
 /** A rule weight of 6 saturates near 0.63; 12 points, near 0.86. */
 const WEIGHT_SATURATION = 6;
+/** Documents per class before the bayes is considered trained. */
+export const MIN_DOCS_DEFAULT = 5;
 /**
  * The bayes earns its voice as its corpus matures: under DOCS_TARGET documents
  * per class it weighs proportionally less and the rules carry the verdict.
@@ -34,12 +37,6 @@ export function toText(fields: Record<string, string>): string {
   return Object.values(fields).join('\n');
 }
 
-export interface RulesOutcome {
-  /** Summed weight of the rules that fired. */
-  weight: number;
-  reasons: Reason[];
-}
-
 function rulesProbability(weight: number): number {
   return 1 - Math.exp(-weight / WEIGHT_SATURATION);
 }
@@ -52,7 +49,7 @@ export function judge(
   const pack = options.rulePack === undefined ? defaultRulePack : options.rulePack;
   const thresholds = { ...DEFAULT_THRESHOLDS, ...options.thresholds };
   const bayesWeight = options.bayesWeight ?? 0.5;
-  const minDocs = options.minDocs ?? 5;
+  const minDocs = options.minDocs ?? MIN_DOCS_DEFAULT;
 
   const fields = toFields(input);
   const tokens = tokenize(toText(fields));

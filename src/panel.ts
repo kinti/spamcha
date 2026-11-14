@@ -9,19 +9,13 @@
 import type { Gatekeeper } from './guard.js';
 import { DEFAULT_LOCALE, translate } from './locales.js';
 import type { Locale } from './locales.js';
+import { domainOf } from './tokenizer.js';
 import type { LogEntry } from './log.js';
 
 const RE_URL = /https?:\/\/[^\s"'<>]+/gi;
 
 function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-/** Base domain of a URL (mirrors the tokenizer's url: extraction). */
-function dominioDe(url: string): string {
-  const limpio = url.replace(/^[a-z]+:\/\//i, '').replace(/^www\./i, '').split(/[/?#]/)[0] ?? '';
-  const partes = limpio.toLowerCase().split('.').filter(Boolean);
-  return partes.length >= 2 ? partes.slice(-2).join('.') : limpio;
 }
 
 function topDe(mapa: Map<string, number>, n: number): [string, number][] {
@@ -56,7 +50,7 @@ export function panelHtml(guard: Gatekeeper, options: PanelOptions = {}): string
     }
     for (const valor of Object.values(e.fields)) {
       for (const m of valor.match(RE_URL) ?? []) {
-        const d = dominioDe(m);
+        const d = domainOf(m);
         if (d) dominios.set(d, (dominios.get(d) ?? 0) + 1);
       }
     }

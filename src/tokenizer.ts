@@ -11,7 +11,7 @@ export function normalize(text: string): string {
 }
 
 /** Base domain of a URL, so whole paths don't get memorized. `a.b.co.uk` → `co.uk` (approx.). */
-function domainOf(url: string): string {
+export function domainOf(url: string): string {
   const clean = url
     .replace(/^[a-z]+:\/\//i, '')
     .replace(/^www\./i, '')

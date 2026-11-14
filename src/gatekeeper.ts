@@ -14,7 +14,7 @@ import { verifyStamp } from './stamp.js';
 import type { VerifyStampOptions } from './stamp.js';
 import type { JudgeOptions, Reason, Verdict } from './types.js';
 
-const MIN_DOCS_DEFAULT = 5;
+import { MIN_DOCS_DEFAULT } from "./judge.js";
 
 export interface GatekeeperOptions extends JudgeOptions {
   /** Site HMAC secret. Long and random: a whole sentence works. */

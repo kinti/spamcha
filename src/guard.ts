@@ -4,13 +4,12 @@
 // the rate limiter and the stamp issuer. node:fs is why this file exists
 // separate from gatekeeper.ts (which stays isomorphic).
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { createModel } from './bayes.js';
 import type { BayesModel } from './bayes.js';
 import { mergeFeedChannels } from './feed.js';
-import type { FeedChannel } from './feed.js';
-import { trainFields } from './judge.js';
+import { loadCachedFeeds } from './feed-cache.js';
+import { MIN_DOCS_DEFAULT, trainFields } from './judge.js';
 import { VerdictLog } from './log.js';
 import { translate } from './locales.js';
 import type { Locale } from './locales.js';
@@ -53,22 +52,8 @@ export interface ReviewMeta {
 }
 
 /** Loads downloaded channels; expired ones are skipped (signatures verified at download). */
-function loadFeedChannels(dir: string): FeedChannel[] {
-  if (!existsSync(dir)) return [];
-  const channels: FeedChannel[] = [];
-  const now = Date.now();
-  for (const name of readdirSync(dir).sort()) {
-    if (!name.endsWith('.json')) continue;
-    try {
-      const ch = JSON.parse(readFileSync(join(dir, name), 'utf8')) as FeedChannel;
-      if (!Number.isNaN(Date.parse(ch.expiresAt)) && now < Date.parse(ch.expiresAt)) {
-        channels.push(ch);
-      }
-    } catch {
-      // corrupt cache file: skip it, the rest stays usable
-    }
-  }
-  return channels;
+function loadFeedChannels(dir: string) {
+  return loadCachedFeeds(dir).channels;
 }
 
 export function createGatekeeper(config: GatekeeperConfig) {

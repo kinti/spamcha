@@ -10,7 +10,8 @@ import type { Reason, Rule, RulePack } from './types.js';
 const cache = new Map<string, RegExp>();
 
 function regexFor(rule: Rule): RegExp {
-  const key = `${rule.pattern}::${rule.flags ?? 'gu'}`;
+  // JSON key, not string concat: a pattern containing `::` must not collide
+  const key = JSON.stringify([rule.pattern, rule.flags ?? 'gu']);
   let re = cache.get(key);
   if (!re) {
     try {

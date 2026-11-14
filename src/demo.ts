@@ -57,6 +57,11 @@ async function readBody(request: IncomingMessage): Promise<string> {
   return data;
 }
 
+/** Submission fields are attacker-controlled: escape before any HTML. */
+function esc(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function fieldsFrom(raw: string): Record<string, string> {
   const fields: Record<string, string> = {};
   for (const [k, v] of new URLSearchParams(raw)) fields[k] = v;
@@ -101,7 +106,7 @@ ${stamp}
       ? '<p>📌 Held in quarantine: review it at <a href="/panel">Panel</a> and teach the judge what it is.</p>'
       : '';
     const html = `<h2>Verdict: <span class="${verdict.decision}">${verdict.decision}</span></h2>
-<pre>${JSON.stringify(verdict, null, 2)}</pre>
+<pre>${esc(JSON.stringify(verdict, null, 2))}</pre>
 ${note}
 <p><a href="/">← back</a></p>`;
     await respond(response, html);
@@ -123,7 +128,7 @@ ${note}
     }
     const entries = pending.map((e) => `<div class="entry">
 <div class="fields">${new Date(e.receivedAt).toLocaleString('en')} · probability ${e.probability.toFixed(2)} · phase ${e.phase}
-${Object.entries(e.fields).map(([k, v]) => `\n<b>${k}</b>: ${v}`).join('')}</div>
+${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join('')}</div>
 <div class="row">
 <form method="post" action="/revision" style="display:inline"><input type="hidden" name="id" value="${e.id}"><input type="hidden" name="accion" value="spam"><button type="submit">🗑 It is garbage (train spam)</button></form>
 <form method="post" action="/revision" style="display:inline"><input type="hidden" name="id" value="${e.id}"><input type="hidden" name="accion" value="ham"><button type="submit">✓ It is legit (train ham)</button></form>

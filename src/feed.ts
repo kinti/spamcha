@@ -52,9 +52,9 @@ type KeyPair = {
 
 export async function generateFeedKeyPair(): Promise<{ private: string; public: string }> {
   const keys = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify'])) as unknown as KeyPair;
-  const privada = await crypto.subtle.exportKey('pkcs8', keys.privateKey);
-  const publica = await crypto.subtle.exportKey('raw', keys.publicKey);
-  return { private: toBase64Url(new Uint8Array(privada)), public: toBase64Url(new Uint8Array(publica)) };
+  const privateBytes = await crypto.subtle.exportKey('pkcs8', keys.privateKey);
+  const publicBytes = await crypto.subtle.exportKey('raw', keys.publicKey);
+  return { private: toBase64Url(new Uint8Array(privateBytes)), public: toBase64Url(new Uint8Array(publicBytes)) };
 }
 
 async function importPrivate(base64url: string) {
@@ -75,7 +75,7 @@ export async function signFeed(channel: FeedToSign, privateKeyB64url: string): P
 
 export type FeedVerification =
   | { ok: true }
-  | { ok: false; reason: 'feed:sin-firma' | 'feed:firma-invalida' | 'feed:caducado' | 'feed:invalido' };
+  | { ok: false; reason: 'feed:invalid' | 'feed:unsigned' | 'feed:bad-signature' | 'feed:expired' };
 
 /** Verifies signature (against the pinned public key, if any) and expiry, against your clock. */
 export async function verifyFeed(
@@ -84,21 +84,21 @@ export async function verifyFeed(
   options: { now?: Date } = {},
 ): Promise<FeedVerification> {
   if (!channel || typeof channel.channel !== 'string' || !Array.isArray(channel.rules)) {
-    return { ok: false, reason: 'feed:invalido' };
+    return { ok: false, reason: 'feed:invalid' };
   }
   const { signature, ...rest } = channel;
   if (publicKeyB64url) {
     if (!signature || !signature.startsWith('ed25519:')) {
-      return { ok: false, reason: 'feed:sin-firma' };
+      return { ok: false, reason: 'feed:unsigned' };
     }
     const key = await importPublic(publicKeyB64url);
-    const firma = fromBase64(signature.slice('ed25519:'.length));
-    const valida = await crypto.subtle.verify('Ed25519', key, firma, ENCODER.encode(canonical(rest)));
-    if (!valida) return { ok: false, reason: 'feed:firma-invalida' };
+    const signatureBytes = fromBase64(signature.slice('ed25519:'.length));
+    const valid = await crypto.subtle.verify('Ed25519', key, signatureBytes, ENCODER.encode(canonical(rest)));
+    if (!valid) return { ok: false, reason: 'feed:bad-signature' };
   }
-  const ahora = options.now ?? new Date();
-  if (Number.isNaN(Date.parse(channel.expiresAt)) || ahora >= new Date(channel.expiresAt)) {
-    return { ok: false, reason: 'feed:caducado' };
+  const now = options.now ?? new Date();
+  if (Number.isNaN(Date.parse(channel.expiresAt)) || now >= new Date(channel.expiresAt)) {
+    return { ok: false, reason: 'feed:expired' };
   }
   return { ok: true };
 }
@@ -106,17 +106,50 @@ export async function verifyFeed(
 // ─── Merge: base pack + channels → the effective pack ──────────────────────
 
 const DOMAINS_WEIGHT = 5; // a curated domain quarantines alone (reviewable, never auto-reject)
+// A feed channel is EXTERNAL input even when signed: sanitize everything.
+// Defense in depth — the signature authenticates the producer, not their care.
+const MAX_RULES_PER_CHANNEL = 100;
+const MAX_PATTERN_LENGTH = 500;
+const MAX_WEIGHT = 6;
+
+/** Validates and clamps a channel rule: compiles, bounded, sane numbers. */
+function safeRule(channelName: string, raw: Rule): Rule | null {
+  const cleanId = String(raw.id ?? '').replace(/[^a-z0-9/_-]/gi, '');
+  if (!cleanId) return null;
+  if (typeof raw.pattern !== 'string' || raw.pattern.length === 0 || raw.pattern.length > MAX_PATTERN_LENGTH) return null;
+  const type = raw.type === 'count' || raw.type === 'ratio' || raw.type === 'density' ? raw.type : null;
+  if (!type) return null;
+  const threshold = Number(raw.threshold);
+  if (!Number.isFinite(threshold) || threshold <= 0) return null;
+  try {
+    new RegExp(raw.pattern, raw.flags ?? 'gu'); // must compile, or the judge would throw per submission
+  } catch {
+    return null;
+  }
+  return {
+    id: `feed:${channelName}:${cleanId}`,
+    type,
+    pattern: raw.pattern,
+    flags: raw.flags,
+    threshold,
+    field: typeof raw.field === 'string' && raw.field.length <= 64 ? raw.field : undefined,
+    minLength: Number.isFinite(raw.minLength) && (raw.minLength as number) > 0 ? raw.minLength : undefined,
+    weight: Math.min(MAX_WEIGHT, Math.max(1, Math.round(Number(raw.weight) || 1))),
+    description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : undefined,
+  };
+}
 
 /** Turns a channel's domain list into one rule (escaped alternation, substring match). */
-function domainRule(nombreCanal: string, domains: string[]): Rule | null {
-  const limpios = domains
+function domainRule(channelName: string, domains: string[]): Rule | null {
+  const clean = domains
     .map((d) => d.trim().toLowerCase().replace(/\.$/, ''))
-    .filter((d) => d.length > 0 && /^[a-z0-9.-]+$/.test(d));
-  if (limpios.length === 0) return null;
+    .filter((d) => d.length > 0 && /^[a-z0-9.-]+$/.test(d))
+    .slice(0, MAX_RULES_PER_CHANNEL);
+  if (clean.length === 0) return null;
   return {
-    id: `feed:${nombreCanal}:domains`,
+    id: `feed:${channelName}:domains`,
     type: 'count',
-    pattern: limpios.map((d) => d.replace(/\./g, '\\.')).join('|'),
+    pattern: clean.map((d) => d.replace(/\./g, '\\.')).join('|'),
     flags: 'gi',
     threshold: 1,
     weight: DOMAINS_WEIGHT,
@@ -126,17 +159,20 @@ function domainRule(nombreCanal: string, domains: string[]): Rule | null {
 /**
  * Merges the site's base pack with verified feed channels. Feed rule ids get
  * prefixed `feed:<channel>:` so a quarantine reason always says who sent it.
- * The site's own pack keeps priority order (its rules evaluate first).
+ * Every channel rule passes `safeRule`: a signed but sloppy channel must not
+ * break the judge (uncompilable regex), slow it down (ReDoS) or pin every
+ * submission to reject (unbounded weight).
  */
 export function mergeFeedChannels(base: RulePack, channels: FeedChannel[]): RulePack {
   const rules: Rule[] = [...base.rules];
   for (const ch of channels) {
-    const nombre = ch.channel.replace(/[^a-z0-9/_-]/gi, '');
-    for (const rule of ch.rules) {
-      rules.push({ ...rule, id: `feed:${nombre}:${rule.id}` });
+    const channelName = ch.channel.replace(/[^a-z0-9/_-]/gi, '');
+    for (const raw of ch.rules.slice(0, MAX_RULES_PER_CHANNEL)) {
+      const rule = safeRule(channelName, raw);
+      if (rule) rules.push(rule);
     }
-    const dominios = domainRule(nombre, ch.domains ?? []);
-    if (dominios) rules.push(dominios);
+    const domainsRule = domainRule(channelName, ch.domains ?? []);
+    if (domainsRule) rules.push(domainsRule);
   }
   return { name: base.name + (channels.length > 0 ? ` +${channels.length} feed(s)` : ''), rules };
 }

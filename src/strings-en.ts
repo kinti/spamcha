@@ -10,10 +10,10 @@ export const stringsEn: Record<string, string> = {
     '  spamcha init [--dir D]                    empty model + default rules in D\n' +
     '  spamcha train --model R [--spam DIR] [--ham DIR]\n' +
     '  spamcha eval --model R [--rules R] --spam DIR --ham DIR\n' +
-    '  spamcha judge [--model R] [--rules R] "text…"   (or text via stdin; alias: juzgar)\n' +
+    '  spamcha judge [--model R] [--rules R] "text…"   (or text via stdin)\n' +
     '  spamcha feed help                         signed intelligence channels\n' +
     '  spamcha version\n' +
-    'Language: --locale es|en (default es; also SPAMCHA_LOCALE)',
+    'Language: --locale es|en (default en; also SPAMCHA_LOCALE)',
   'cli.init.created': 'Created  {path}',
   'cli.init.skipped': 'Skipped {path} (already exists)',
   'cli.init.next': 'Next step: fill ham/ and spam/ folders with real examples, then run train.',
@@ -40,6 +40,8 @@ export const stringsEn: Record<string, string> = {
   'cli.feed.unchanged': '{nombre}: unchanged (version {version})',
   'cli.feed.bad-signature': '{nombre}: INVALID SIGNATURE — channel rejected (wrong key or tampered file?)',
   'cli.feed.skipped-expired': 'Expired feed skipped: {channel}',
+  'cli.feed.http': '{nombre}: the channel URL answered HTTP {status} — skipped',
+  'cli.feed.unsigned-warning': '⚠ {nombre}: channel accepted WITHOUT a pinned key — feed update will not verify its signature',
   'cli.feed.help':
     'Feeds — signed intelligence channels:\n' +
     '  spamcha feed keygen --privada k.b64 --publica k.pub.b64\n' +

@@ -181,11 +181,18 @@ async function cmdFeed(flags: Record<string, string | boolean>, sub: string, loc
       const name = typeof flags['name'] === 'string' ? flags['name'] : '';
       const url = typeof flags['url'] === 'string' ? flags['url'] : '';
       if (name.length === 0 || url.length === 0) throw new Error('add needs --name N --url URL');
-      const channels = readChannels(configPath);
+      // The pinned key is the trust anchor: without it, `update` would cache
+      // anything the URL serves. Opting out demands the explicit flag.
+      const unsigned = flags['unsigned'] === true;
       const publicKey = typeof flags['public'] === 'string' ? readFileSync(flags['public'], 'utf8').trim() : undefined;
+      if (!publicKey && !unsigned) {
+        throw new Error('add needs --public k.pub.b64 to pin the channel key (or --unsigned to accept unsigned channels)');
+      }
+      const channels = readChannels(configPath);
       const updated = channels.filter((c) => c.name !== name).concat({ name, url, publicKey });
       writeChannels(configPath, updated);
-      return t('cli.feed.added', { nombre: name, url });
+      const aviso = publicKey ? '' : '\n' + t('cli.feed.unsigned-warning', { nombre: name });
+      return t('cli.feed.added', { nombre: name, url }) + aviso;
     }
     case 'list': {
       const channels = readChannels(configPath);
@@ -201,22 +208,24 @@ async function cmdFeed(flags: Record<string, string | boolean>, sub: string, loc
       mkdirSync(feedsDir, { recursive: true });
       const lines: string[] = [];
       for (const channel of channels) {
+        // sanitize the cache file name: a channel name like ../x must not escape feedsDir
+        const safeName = channel.name.replace(/[^a-z0-9/_-]/gi, '') || 'unnamed';
         const response = await fetch(channel.url);
         if (!response.ok) {
-          lines.push(t('cli.feed.bad-signature', { nombre: `${channel.name} (HTTP ${response.status})` }));
+          lines.push(t('cli.feed.http', { nombre: channel.name, status: String(response.status) }));
           continue;
         }
         const ch = (await response.json()) as FeedChannel;
         const verification = await verifyFeed(ch, channel.publicKey);
         if (!verification.ok) {
           lines.push(
-            verification.reason === 'feed:caducado'
+            verification.reason === 'feed:expired'
               ? t('cli.feed.updated-caducado', { nombre: channel.name, expiresAt: ch.expiresAt })
               : t('cli.feed.bad-signature', { nombre: channel.name }),
           );
           continue;
         }
-        const target = join(feedsDir, `${channel.name}.json`);
+        const target = join(feedsDir, `${safeName}.json`);
         const cached = existsSync(target) ? (JSON.parse(readFileSync(target, 'utf8')) as FeedChannel) : null;
         if (cached && cached.version >= ch.version) {
           lines.push(t('cli.feed.unchanged', { nombre: channel.name, version: ch.version }));

@@ -14,7 +14,7 @@ export const stringsEs: Record<string, string> = {
     '  spamcha judge [--model R] [--rules R] "texto…"   (o texto por stdin; alias: juzgar)\n' +
     '  spamcha feed help                         canales de inteligencia firmados\n' +
     '  spamcha version\n' +
-    'Idioma: --locale es|en (por defecto es; también SPAMCHA_LOCALE)',
+    'Idioma: --locale es|en (por defecto en; también SPAMCHA_LOCALE)',
   'cli.init.created': 'Creado  {path}',
   'cli.init.skipped': 'Omitido {path} (ya existe)',
   'cli.init.next': 'Siguiente paso: llena carpetas ham/ y spam/ con ejemplos reales y ejecuta train.',
@@ -40,6 +40,8 @@ export const stringsEs: Record<string, string> = {
   'cli.feed.unchanged': '{nombre}: sin cambios (versión {version})',
   'cli.feed.bad-signature': '{nombre}: FIRMA INVÁLIDA — canal rechazado (¿clave equivocada o archivo manipulado?)',
   'cli.feed.skipped-expired': 'Feed caducado omitido: {channel}',
+  'cli.feed.http': '{nombre}: la URL del canal respondió HTTP {status} — omitido',
+  'cli.feed.unsigned-warning': '⚠ {nombre}: canal aceptado SIN clave fijada — feed update no verificará su firma',
   'cli.feed.help':
     'Feeds — canales de inteligencia firmados:\n' +
     '  spamcha feed keygen --private k.b64 --public k.pub.b64\n' +

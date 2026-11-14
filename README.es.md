@@ -209,6 +209,8 @@ spamcha feed add --nombre oficial-es --url https://spamcha.com/feeds/oficial-es.
 spamcha feed update        # ponlo en cron: descarga + verifica firma + control de versión
 ```
 
+**La clave fijada es obligatoria**: `feed add` exige `--public` salvo que pases `--unsigned` de forma explícita. Sin clave fijada, `update` cachearía cualquier cosa que sirva la URL — esa clave es el ancla de confianza de todo el modelo de canales.
+
 Entonces `judge`, `eval` y el guard fusionan los canales automáticamente (`--feeds-dir` / `feedsDir`). Modelo de confianza: **firmas Ed25519 con la clave pública fijada localmente** (un host de feed comprometido no puede envenenarte), versiones monótonas y los feeds **caducan a propósito** — la inteligencia rancia es un pasivo; los productores deben refrescar.
 
 Una razón de cuarentena siempre dice quién mandó la regla: `rule:feed:oficial/es:seo-slop-es`.
@@ -253,6 +255,12 @@ eval-spam/
 - El pack por defecto es un punto de partida para formularios de contacto en español; ajusta `rules-es.json` por sitio. Una regla con `field` solo se aplica a ese campo.
 - El juez lee texto. No hace reputación de IP, límite de ritmo externo ni señales de comportamiento — eso vive en las otras capas de la pila.
 - El modelo es un archivo JSON plano: portable, inspeccionable, amigable con git (y justo por eso debería quedarse fuera de repos públicos). La persistencia usa `node:fs`; en el navegador usa las funciones puras (`tokenize`, `probability`, `judge`) con un modelo servido como JSON.
+
+## Hoja de ruta (documentado como pendiente)
+
+- `spamcha serve`: el pipeline como servicio HTTP local — la puerta para backends PHP/Python/WordPress (universalidad modo 2) y para un plugin de WordPress; una imagen Docker lo envuelve.
+- Verificador web-bot-auth: agentes firmados se saltan la puerta PoW, el juez los puntúa igual.
+- Corpus público de benchmark (`spamcha-bench`), modelo inicial, packs de feeds por sector.
 
 ## Desarrollo
 

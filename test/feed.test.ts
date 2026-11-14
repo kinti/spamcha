@@ -42,7 +42,7 @@ describe('feed channels', () => {
     const firmado = await signFeed(canalBase(), keys.private);
     const manipulado: FeedChannel = { ...firmado, version: firmado.version + 1 };
     const v = await verifyFeed(manipulado, keys.public, { now: new Date('2026-11-14') });
-    expect(v).toEqual({ ok: false, reason: 'feed:firma-invalida' });
+    expect(v).toEqual({ ok: false, reason: 'feed:bad-signature' });
   });
 
   it('another key cannot validate a channel', async () => {
@@ -50,27 +50,27 @@ describe('feed channels', () => {
     const otras = await generateFeedKeyPair();
     const firmado = await signFeed(canalBase(), keys.private);
     const v = await verifyFeed(firmado, otras.public, { now: new Date('2026-11-14') });
-    expect(v).toEqual({ ok: false, reason: 'feed:firma-invalida' });
+    expect(v).toEqual({ ok: false, reason: 'feed:bad-signature' });
   });
 
   it('an unsigned channel with a pinned key is rejected', async () => {
     const keys = await generateFeedKeyPair();
     const sinFirma: FeedChannel = { ...canalBase(), signature: '' };
     const v = await verifyFeed(sinFirma, keys.public, { now: new Date('2026-11-14') });
-    expect(v).toEqual({ ok: false, reason: 'feed:sin-firma' });
+    expect(v).toEqual({ ok: false, reason: 'feed:unsigned' });
   });
 
   it('expired channels are rejected even with a good signature', async () => {
     const keys = await generateFeedKeyPair();
     const viejo = await signFeed({ ...canalBase(), expiresAt: '2026-01-01T00:00:00Z' }, keys.private);
     const v = await verifyFeed(viejo, keys.public, { now: new Date('2026-11-14') });
-    expect(v).toEqual({ ok: false, reason: 'feed:caducado' });
+    expect(v).toEqual({ ok: false, reason: 'feed:expired' });
   });
 
   it('a shapeless channel is invalid', async () => {
     const keys = await generateFeedKeyPair();
     const v = await verifyFeed({ channel: 'x' } as unknown as FeedChannel, keys.public, { now: new Date('2026-11-14') });
-    expect(v).toEqual({ ok: false, reason: 'feed:invalido' });
+    expect(v).toEqual({ ok: false, reason: 'feed:invalid' });
   });
 
   it('merge prefixes feed rule ids and turns domains into a rule', async () => {
