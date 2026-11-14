@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.11.0 — leads verificados: la cuarentena sin humanos
+- FIX seguridad: /verdict ya no acepta un reloj del cliente (bypass del suelo de tiempo).
+- Doble opt-in: los envíos retenidos llevan un token de confirmación firmado;
+  el remitente confirma con un clic (el sitio pone el enlace) → el mensaje se
+  entrega como LEAD VERIFICADO en el panel (nombre, email, mensaje, tiempo de
+  respuesta). Los bots no confirman enlaces.
+- No confirmado en 7 días → barrido como presunto spam, borrado SIN entrenar
+  (el ruido de entregabilidad hace de la no-respuesta una señal débil).
+- Confirmar entrega SIN entrenar ham: un spammer con buzón monitorizado
+  confirmaría — el juicio de ham queda en clics del operador (opcionales).
+- autoHam ahora opt-in (off por defecto).
+- Panel: sección "Leads verificados" con mailto; serve: /leads.json y /leads.csv
+  para exportar la cartera; GET /confirm público (el token es la auth).
 ## 0.10.0 — fiabilidad: hallazgos de la auditoría externa aplicados
 - FIX regression: the convinced-bayes quarantine floor now applies at ANY corpus
   size (it vanished at the trained boundary — learning more degraded protection).

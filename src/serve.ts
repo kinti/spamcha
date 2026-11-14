@@ -15,6 +15,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import type { Gatekeeper } from './guard.js';
 import { panelHtml } from './panel.js';
 import { stampFieldsHtml } from './stamp.js';
+import { leadsACsv, leadsDeConfirmadas } from './leads.js';
 
 export interface ServeOptions {
   /** Serve the panel's review buttons to a different path (default `/revision`). */
@@ -221,6 +222,19 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
       } else {
         sendHtml(response, 404, PAGE('<div class="veredicto reject">✗ Invalid or expired confirmation link</div><p><a href="/">← back</a></p>'));
       }
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/leads.json') {
+      sendJson(response, 200, leadsDeConfirmadas(guard.listConfirmed()), options.cors);
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/leads.csv') {
+      const csv = leadsACsv(leadsDeConfirmadas(guard.listConfirmed()));
+      if (options.cors) response.setHeader('access-control-allow-origin', '*');
+      response.writeHead(200, { 'content-type': 'text/csv; charset=utf-8' });
+      response.end(csv);
       return;
     }
 

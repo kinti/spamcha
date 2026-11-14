@@ -10,6 +10,7 @@ import type { Gatekeeper } from './guard.js';
 import { DEFAULT_LOCALE, translate } from './locales.js';
 import type { Locale } from './locales.js';
 import { domainOf } from './tokenizer.js';
+import { leadsDeConfirmadas } from './leads.js';
 import type { LogEntry } from './log.js';
 
 const RE_URL = /https?:\/\/[^\s"'<>]+/gi;
@@ -99,8 +100,21 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
 <td>${e.codes.map((c) => `<code>${esc(c)}</code>`).join(' ')}</td>
 </tr>`).join('') + '</table>';
 
+  const leads = leadsDeConfirmadas(guard.listConfirmed());
+  const leadsHtml = leads.length === 0
+    ? `<p class="apagado">${t('panel.leads-empty')}</p>`
+    : `<table><tr><th>${t('panel.th-name')}</th><th>${t('panel.th-email')}</th><th>${t('panel.th-confirmed')}</th><th>${t('panel.th-content')}</th></tr>` +
+      leads.map((l) => `<tr>
+<td>${l.nombre ? esc(l.nombre) : '—'}</td>
+<td>${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>` : '—'}</td>
+<td>${new Date(l.confirmado).toLocaleString(locale)}</td>
+<td class="campos">${esc(l.mensaje.slice(0, 80))}</td>
+</tr>`).join('') + '</table>';
+
   return `<h2>${t('panel.title')}</h2>
 ${estadisticas}
+<h3>${t('panel.leads-title')} (${leads.length})</h3>
+${leadsHtml}
 <h3>${t('panel.top-rules')}</h3>
 ${listaTop(topDe(reglas, 5), t('panel.none'))}
 <h3>${t('panel.top-domains')}</h3>
