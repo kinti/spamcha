@@ -105,7 +105,7 @@ ${stamp}
     const note = verdict.decision === 'quarantine'
       ? '<p>📌 Held in quarantine: review it at <a href="/panel">Panel</a> and teach the judge what it is.</p>'
       : '';
-    const html = `<h2>Verdict: <span class="${verdict.decision}">${verdict.decision}</span></h2>
+    const html = `<div class="veredicto">Verdict: <span class="${verdict.decision}">${verdict.decision.toUpperCase()}</span></div>
 <pre>${esc(JSON.stringify(verdict, null, 2))}</pre>
 ${note}
 <p><a href="/">← back</a></p>`;
