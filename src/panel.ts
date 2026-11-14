@@ -1,7 +1,7 @@
 // The panel: what arrived, at a glance. Server-rendered HTML (no JavaScript,
 // no dependencies) reading the verdict log + the quarantine + the model state.
 // It shows stats, the most active rules, the spam domains seen, the latest
-// submissions and — for held ones — the review buttons that train the judge.
+// submissions and: for held ones: the review buttons that train the judge.
 //
 // SECURITY: this HTML has no authentication. Serve it on localhost or behind
 // your own auth (Cloudflare Access does nicely); it reads your private data.
@@ -105,8 +105,8 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
     ? `<p class="apagado">${t('panel.leads-empty')}</p>`
     : `<table><tr><th>${t('panel.th-name')}</th><th>${t('panel.th-email')}</th><th>${t('panel.th-confirmed')}</th><th>${t('panel.th-content')}</th></tr>` +
       leads.map((l) => `<tr>
-<td>${l.nombre ? esc(l.nombre) : '—'}</td>
-<td>${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>` : '—'}</td>
+<td>${l.nombre ? esc(l.nombre) : ''}</td>
+<td>${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>` : ''}</td>
 <td>${new Date(l.confirmado).toLocaleString(locale)}</td>
 <td class="campos">${esc(l.mensaje.slice(0, 80))}</td>
 </tr>`).join('') + '</table>';

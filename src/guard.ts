@@ -1,4 +1,4 @@
-// The guard: the installed gatekeeper. One factory, one object — the shape of
+// The guard: the installed gatekeeper. One factory, one object: the shape of
 // "npm install spamcha + 5 lines". It owns the model (load-or-create, autosave
 // on review), the quarantine store (the "this was garbage" button's memory),
 // the rate limiter and the stamp issuer. node:fs is why this file exists
@@ -64,7 +64,7 @@ export interface ReviewMeta {
   ip?: string;
   /** Server clock, injectable for tests. */
   now?: number;
-  /** Request headers (lowercased) — for the experimental web-bot-auth gate. */
+  /** Request headers (lowercased): for the experimental web-bot-auth gate. */
   headers?: Record<string, string>;
 }
 
@@ -150,7 +150,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
     replayCache: config.singleUseStamps === false ? undefined : replayCache,
     maxFieldLength: config.maxFieldLength ?? 20_000,
   }, { headers: meta.headers });
-      // auto-ham: a pass with zero fired rules is near-certainly real mail —
+      // auto-ham: a pass with zero fired rules is near-certainly real mail:
       // the site's own traffic builds the ham corpus without anyone clicking.
       if (config.autoHam === true && verdict.decision === 'pass' && verdict.rules === 0) {
         trainFields(model, stripOwnFields(fields), 'ham');
@@ -159,7 +159,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
       let confirmToken: string | undefined;
       if (verdict.decision === 'quarantine' && quarantine) {
         // Double opt-in, sin humanos: el token permite al propio remitente
-        // confirmar su mensaje (un clic — los bots no confirman enlaces).
+        // confirmar su mensaje (un clic: los bots no confirman enlaces).
         // La confirmación ENTREGA el mensaje; no entrena (poisoning vector).
         confirmToken = randomBase64Url(24);
         quarantine.add(stripOwnFields(fields), verdict, confirmToken);
@@ -192,7 +192,7 @@ export function createGatekeeper(config: GatekeeperConfig) {
      * Double opt-in sin humanos: el remitente confirma su mensaje con el
      * enlace (el sitio lo entrega por mail o lo muestra en su página de
      * gracias). Delivered ≠ trained: confirmar NO entrena ham (un spammer
-     * con buzón monitorizado confirmaría — vector de envenenamiento).
+     * con buzón monitorizado confirmaría: vector de envenenamiento).
      * Devuelve la entrada entregada, o null si el token no vale.
      */
     confirmSubmission(token: string): QuarantineEntry | null {

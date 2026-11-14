@@ -18,7 +18,7 @@ describe('panel', () => {
       minAgeMs: 0,
     });
     const html = panelHtml(guard);
-    expect(html).toContain('Panel — what arrived');
+    expect(html).toContain('Panel: what arrived');
     expect(html).toContain('No submissions yet.');
     expect(html).toContain('Quarantine is empty.');
   });
@@ -77,7 +77,7 @@ describe('panel', () => {
       { ip: '10.7.0.3', now: Date.now() + 4_000 },
     );
     const html = panelHtml(guard, { locale: 'es' });
-    expect(html).toContain('Panel — qué ha llegado');
+    expect(html).toContain('Panel: qué ha llegado');
     expect(html).toContain('Total 1');
     expect(html).toContain('Es basura (entrenar spam)');
   });
@@ -85,7 +85,7 @@ describe('panel', () => {
   it('no log configured: the panel still renders', () => {
     const dir = mkdtempSync(join(tmpdir(), 'spamcha-panel-'));
     const guard = createGatekeeper({ secret: SECRET, modelPath: join(dir, 'm.json') });
-    expect(panelHtml(guard)).toContain('Panel — what arrived');
+    expect(panelHtml(guard)).toContain('Panel: what arrived');
   });
 
   it('confirmed entries show up as verified leads with mailto', async () => {

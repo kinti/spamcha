@@ -1,4 +1,4 @@
-// The verdict log: one JSONL file with EVERY submission's outcome — pass,
+// The verdict log: one JSONL file with EVERY submission's outcome: pass,
 // quarantine and reject. The panel reads this; the owner finally SEES what
 // arrives. Same privacy rule as everything else: the file lives on the
 // owner's disk and nowhere else. Rotates: keeps only the newest max entries.

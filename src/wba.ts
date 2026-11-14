@@ -1,4 +1,4 @@
-// web-bot-auth verifier — EXPERIMENTAL.
+// web-bot-auth verifier: EXPERIMENTAL.
 // Implements the Ed25519 profile of draft-ietf-webbotauth-httpsig-protocol
 // (HTTP Message Signatures for automated traffic, IETF WG; authors
 // Cloudflare + Google). A signed AI agent proves which operator runs it, so
@@ -30,7 +30,7 @@ export interface WbaOptions {
   maxAgeSeconds?: number;
   /** Server clock, injectable for tests. */
   now?: Date;
-  /** Directory fetcher — injectable for tests; default: global fetch. */
+  /** Directory fetcher: injectable for tests; default: global fetch. */
   fetchDirectory?: (url: string) => Promise<unknown>;
 }
 
@@ -79,7 +79,7 @@ export async function verifyWebBotAuth(
   if (!agent || !headers.signature || !headers['signature-input']) {
     return { ok: false, reason: 'wba:absent' };
   }
-  // SSRF guard: the directory fetch goes where the ATTACKER says — https only.
+  // SSRF guard: the directory fetch goes where the ATTACKER says: https only.
   if (!agent.startsWith('https://')) {
     return { ok: false, reason: 'wba:invalid' };
   }

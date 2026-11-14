@@ -2,7 +2,7 @@
 /**
  * Plugin Name: spamcha
  * Plugin URI:  https://spamcha.com
- * Description: Bridge to your own spamcha serve instance — the invisible, trainable, local spam judge. No captcha, no content sent to any cloud. Protects comments out of the box; developers get spamcha_verdict() for any form.
+ * Description: Bridge to your own spamcha serve instance: the invisible, trainable, local spam judge. No captcha, no content sent to any cloud. Protects comments out of the box; developers get spamcha_verdict() for any form.
  * Version:     0.1.0
  * Author:      spamcha contributors
  * License:     MIT
@@ -57,7 +57,7 @@ class Spamcha_Plugin {
 
 	/**
 	 * Hidden stamp fields for any form, fetched FRESH per render.
-	 * No transient: stamps are single-use — sharing one token across visitors
+	 * No transient: stamps are single-use: sharing one token across visitors
 	 * would trigger the service's replay protection and reject real people.
 	 */
 	public static function stamp_html(): string {
@@ -84,7 +84,7 @@ class Spamcha_Plugin {
 
 	/** Runs before WP stores anything: reject, hold for moderation, or pass. */
 	public function judge_comment( array $comment ): array {
-		// Pass the form fields AS SUBMITTED — including the stamp and the
+		// Pass the form fields AS SUBMITTED: including the stamp and the
 		// honeypot the service rendered. Fabricating them here would defeat
 		// the stamp gate (the service would see missing/stale stamps and
 		// reject every real comment).
@@ -103,7 +103,7 @@ class Spamcha_Plugin {
 				);
 				break;
 			case 'quarantine':
-				// Review it at the spamcha panel: it might be legit — and teaching it trains the judge.
+				// Review it at the spamcha panel: it might be legit: and teaching it trains the judge.
 				$comment['comment_approved'] = 0;
 				break;
 		}
@@ -162,10 +162,10 @@ class Spamcha_Plugin {
 		echo '<div class="wrap"><h1>spamcha</h1>';
 		echo $ok
 			? '<p><strong style="color:#067d17">✓ ' . esc_html__( 'Service reachable.', 'spamcha' ) . '</strong></p>'
-			: '<p><strong style="color:#da1e28">✗ ' . esc_html__( 'Service NOT reachable — is spamcha serve running?', 'spamcha' ) . '</strong></p>';
+			: '<p><strong style="color:#da1e28">✗ ' . esc_html__( 'Service NOT reachable: is spamcha serve running?', 'spamcha' ) . '</strong></p>';
 		echo '<p><a href="' . esc_url( self::service( '/panel' ) ) . '" target="_blank" rel="noopener">' .
 			esc_html__( 'Open the panel (what arrived, quarantine review)', 'spamcha' ) . ' ↗</a></p>';
-		echo '<p>' . esc_html__( 'Quarantined comments are held for moderation here in WordPress too — review both places: marking spam in the spamcha panel trains your local judge.', 'spamcha' ) . '</p>';
+		echo '<p>' . esc_html__( 'Quarantined comments are held for moderation here in WordPress too: review both places: marking spam in the spamcha panel trains your local judge.', 'spamcha' ) . '</p>';
 		echo '<form action="options.php" method="post">';
 		settings_fields( 'spamcha' );
 		do_settings_sections( 'spamcha' );

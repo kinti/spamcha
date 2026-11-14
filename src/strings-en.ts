@@ -1,11 +1,11 @@
-// NATIVE string pack: English. spamcha is born in English — this pack is the
+// NATIVE string pack: English. spamcha is born in English: this pack is the
 // source the CLI and verdicts speak by default. Spanish ships as a translation
 // (strings-es.ts). Codes are screws: they never get translated.
 
 export const stringsEn: Record<string, string> = {
   // CLI
   'cli.help':
-    'spamcha — local spam judge for web forms\n' +
+    'spamcha: local spam judge for web forms\n' +
     'Usage:\n' +
     '  spamcha init [--dir D]                    empty model + default rules in D\n' +
     '  spamcha train --model R [--spam DIR] [--ham DIR]\n' +
@@ -39,12 +39,12 @@ export const stringsEn: Record<string, string> = {
   'cli.feed.updated': '{nombre}: version {version} ({rules} rules, {domains} domains)',
   'cli.feed.updated-caducado': '{nombre}: EXPIRED, skipped (expired {expiresAt})',
   'cli.feed.unchanged': '{nombre}: unchanged (version {version})',
-  'cli.feed.bad-signature': '{nombre}: INVALID SIGNATURE — channel rejected (wrong key or tampered file?)',
+  'cli.feed.bad-signature': '{nombre}: INVALID SIGNATURE: channel rejected (wrong key or tampered file?)',
   'cli.feed.skipped-expired': 'Expired feed skipped: {channel}',
-  'cli.feed.http': '{nombre}: the channel URL answered HTTP {status} — skipped',
-  'cli.feed.unsigned-warning': '⚠ {nombre}: channel accepted WITHOUT a pinned key — feed update will not verify its signature',
+  'cli.feed.http': '{nombre}: the channel URL answered HTTP {status}: skipped',
+  'cli.feed.unsigned-warning': '⚠ {nombre}: channel accepted WITHOUT a pinned key: feed update will not verify its signature',
   'cli.feed.help':
-    'Feeds — signed intelligence channels:\n' +
+    'Feeds: signed intelligence channels:\n' +
     '  spamcha feed keygen --privada k.b64 --publica k.pub.b64\n' +
     '  spamcha feed sign --archivo feed.json --privada k.b64\n' +
     '  spamcha feed add --nombre N --url URL [--publica k.pub.b64] [--config C]\n' +
@@ -52,14 +52,14 @@ export const stringsEn: Record<string, string> = {
     '  spamcha feed update [--config C] [--dir feeds/]',
 
   // Panel
-  'panel.title': 'Panel — what arrived',
+  'panel.title': 'Panel: what arrived',
   'panel.stats': 'Total {total} · pass {pass} · quarantine {quarantine} · reject {reject} · last 24h: {horas24}',
   'panel.model': 'Model: spam={spam} ham={ham} · vocabulary {vocabulary} · phase {phase}',
   'panel.pending': 'Quarantine pending: {n}',
   'panel.top-rules': 'Most active rules',
   'panel.top-domains': 'Domains seen in filtered content',
   'panel.none': 'Nothing yet.',
-  'panel.quarantine-title': 'Quarantine — teach the judge',
+  'panel.quarantine-title': 'Quarantine: teach the judge',
   'panel.quarantine-empty': 'Quarantine is empty.',
   'panel.btn-spam': '🗑 It is garbage (train spam)',
   'panel.btn-ham': '✓ It is legit (train ham)',

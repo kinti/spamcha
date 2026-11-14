@@ -1,4 +1,4 @@
-// Hand-rolled Naive Bayes classifier — no dependencies to drag around.
+// Hand-rolled Naive Bayes classifier: no dependencies to drag around.
 // The bogofilter/SpamProbe pattern from email, applied to forms for the first time.
 
 import type { Label } from './types.js';
@@ -57,7 +57,7 @@ export function train(model: BayesModel, tokens: string[], label: Label): BayesM
  * (the judge then decides on rules alone, `cold` phase).
  *
  * Each token contributes its own smoothed probability (Graham-style, "A Plan
- * for Spam" — not raw multinomial): `(s+a)/(s+h+2a)` is independent of the
+ * for Spam": not raw multinomial): `(s+a)/(s+h+2a)` is independent of the
  * class totals, so a completely unseen text stays neutral at the prior instead
  * of drifting toward whichever class saw more tokens during training.
  * In-document multiplicity amplifies each token's voice (repeats push).

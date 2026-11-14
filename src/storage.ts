@@ -1,5 +1,5 @@
 // Model persistence: one readable, portable, git-friendly JSON file.
-// Only node:fs — the browser never trains, it just queries (and there you use
+// Only node:fs: the browser never trains, it just queries (and there you use
 // bayes.ts directly, feeding the model JSON over the wire).
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

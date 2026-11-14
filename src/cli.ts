@@ -124,7 +124,7 @@ function writeChannels(path: string, channels: ChannelConfig[]): void {
 }
 
 /** Loads downloaded feeds from the directory; skips expired ones (with a warning).
- *  Signatures were already verified against the pinned key at `feed update` —
+ *  Signatures were already verified against the pinned key at `feed update`:
  *  here we only re-check expiry (synchronous, no promises at startup). */
 function loadedFeeds(feedsDir: string, locale: Locale): { channels: FeedChannel[]; warnings: string[] } {
   const warnings: string[] = [];
@@ -397,7 +397,7 @@ async function cmdServe(flags: Record<string, string | boolean>, locale: Locale)
   const server = createServeServer(guard, { cors: flags['cors'] === true, trustProxy: flags['trust-proxy'] === true });
   await new Promise<void>((resolve) => server.listen(port, host, resolve));
   const argvSecretNote = typeof flags['secret'] === 'string'
-    ? '  ⚠ secret passed as a CLI flag: visible in process lists — prefer SPAMCHA_SECRET env'
+    ? '  ⚠ secret passed as a CLI flag: visible in process lists: prefer SPAMCHA_SECRET env'
     : '';
   return [
     `spamcha service listening on http://${host}:${port}`,

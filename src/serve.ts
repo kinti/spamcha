@@ -1,11 +1,11 @@
-// `spamcha serve`: the verdict pipeline as a local HTTP service — the door for
+// `spamcha serve`: the verdict pipeline as a local HTTP service: the door for
 // PHP/Python/WordPress backends (mode-2 universality) and for static sites.
-// Endpoints (JSON, no auth by design — bind to localhost and expose via your
+// Endpoints (JSON, no auth by design: bind to localhost and expose via your
 // own auth if you must):
 //   GET  /health            liveness + model state
 //   GET  /stamp             issue a stamp (?format=html → the two hidden inputs)
 //   POST /verdict           body: urlencoded fields, or JSON {fields, ip?}
-//                           → the full gatekeeper verdict as JSON (always 200 —
+//                           → the full gatekeeper verdict as JSON (always 200:
 //                             the `decision` field drives your code)
 //   GET  /panel             what arrived (panelHtml)
 //   GET|POST /revision      quarantine review actions (panel's button target)
@@ -20,9 +20,9 @@ import { leadsACsv, leadsDeConfirmadas } from './leads.js';
 export interface ServeOptions {
   /** Serve the panel's review buttons to a different path (default `/revision`). */
   actionPath?: string;
-  /** Access-Control-Allow-Origin: * on API routes — for static-site clients. */
+  /** Access-Control-Allow-Origin: * on API routes: for static-site clients. */
   cors?: boolean;
-  /** Trust X-Forwarded-For for rate limiting (default false — header spoofing). */
+  /** Trust X-Forwarded-For for rate limiting (default false: header spoofing). */
   trustProxy?: boolean;
   /** Request body cap in bytes (default 256.000 → 413 over it). */
   maxBodyBytes?: number;
@@ -36,7 +36,7 @@ function esc(text: string): string {
 
 const PAGE = (body: string): string => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>spamcha — service</title>
+<title>spamcha: service</title>
 <style>
   body{font-family:system-ui,sans-serif;max-width:680px;margin:2rem auto;padding:0 1rem;line-height:1.5}
   pre{background:#f4f4f4;padding:.75rem;border-radius:6px;overflow-x:auto;font-size:.85rem}
@@ -60,7 +60,7 @@ async function readBody(request: IncomingMessage, maxBytes = DEFAULT_BODY_CAP): 
 }
 
 /** Cross-site browser POSTs carry Origin; curl-style clients don't. A
- *  mismatched Origin on a mutating route is CSRF — reject it. */
+ *  mismatched Origin on a mutating route is CSRF: reject it. */
 function sameOrigin(request: IncomingMessage): boolean {
   const origin = request.headers.origin;
   if (origin === undefined) return true; // non-browser client
@@ -149,7 +149,7 @@ export function createServeServer(guard: Gatekeeper, options: ServeOptions = {})
       let ip: string | undefined = request.headers['x-forwarded-for'] as string | undefined;
       if (contentType.includes('application/json')) {
         try {
-          // SEC: `now` del cliente NO se acepta — el reloj del suelo de tiempo
+          // SEC: `now` del cliente NO se acepta: el reloj del suelo de tiempo
           // es del servidor (inyectarlo permitiría saltarse la puerta).
           const parsed = JSON.parse(raw) as { fields?: Record<string, string>; ip?: string };
           fields = parsed.fields ?? {};
@@ -218,7 +218,7 @@ ${Object.entries(e.fields).map(([k, v]) => `\n<b>${esc(k)}</b>: ${esc(v)}`).join
       const entry = guard.confirmSubmission(token);
       if (entry) {
         sendHtml(response, 200, PAGE(`<div class="veredicto pass">✓ Message confirmed and delivered</div>
-<p>Gracias — tu mensaje ya está en manos del destinatario.</p><p><a href="/panel">← panel</a></p>`));
+<p>Gracias: tu mensaje ya está en manos del destinatario.</p><p><a href="/panel">← panel</a></p>`));
       } else {
         sendHtml(response, 404, PAGE('<div class="veredicto reject">✗ Invalid or expired confirmation link</div><p><a href="/">← back</a></p>'));
       }

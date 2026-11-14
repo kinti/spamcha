@@ -1,9 +1,9 @@
-// The quarantine: one JSONL file with the submissions held for review — plus
+// The quarantine: one JSONL file with the submissions held for review: plus
 // the CONFIRMATION mechanism that removes the human from the loop:
 // every held entry carries a signed token; the sender confirms with one click
 // (a link the site can put on its own thank-you page or mail) and the message
 // is delivered without anyone reviewing anything. Entries nobody confirms
-// within the TTL are presumed spam and swept away — no operator required.
+// within the TTL are presumed spam and swept away: no operator required.
 // This is the newsletter double opt-in pattern, applied to contact forms.
 
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -13,7 +13,7 @@ import type { Verdict } from './types.js';
 export interface QuarantineEntry {
   id: string;
   receivedAt: string;
-  /** The judged fields (stamp and honeypot stripped out) — enough to retrain. */
+  /** The judged fields (stamp and honeypot stripped out): enough to retrain. */
   fields: Record<string, string>;
   probability: number;
   phase: 'cold' | 'trained';
@@ -96,7 +96,7 @@ export class QuarantineStore {
   /**
    * Sweeps unconfirmed entries past the TTL: nobody confirmed them within the
    * window, so they're presumed spam and deleted WITHOUT training (mail
-   * deliverability noise makes non-response a weak signal — sweeping without
+   * deliverability noise makes non-response a weak signal: sweeping without
    * learning keeps the corpus clean). Returns the removed entries.
    */
   sweepExpired(now = Date.now(), ttlMs = this.ttlMs): QuarantineEntry[] {

@@ -1,5 +1,5 @@
 // Thin middleware adapters: one for Express-style (req, res, next), one for
-// Hono-style (context, next). Structural types only — no framework imports,
+// Hono-style (context, next). Structural types only: no framework imports,
 // zero dependencies. Next.js needs no adapter: call guard.review() in the
 // route handler directly.
 //

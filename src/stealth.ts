@@ -2,8 +2,8 @@
 // stamp field and the honeypot field. Per-site random names break the recipe
 // economy (bot farms ship evasions for the POPULAR config, not for your site)
 // and a plausible honeypot name invites dumb bots to fill it.
-// This is not the security itself — Kerckhoffs still holds, the stamp is HMAC
-// — it's raising the cost of targeting your site specifically.
+// This is not the security itself: Kerckhoffs still holds, the stamp is HMAC
+//: it's raising the cost of targeting your site specifically.
 
 import { randomBase64Url } from './crypto.js';
 
@@ -26,7 +26,7 @@ function azar(max: number): number {
   return crypto.getRandomValues(new Uint32Array(1))[0] % max;
 }
 
-/** Random valid HTML name: letter start, base36 tail — nothing meaningful. */
+/** Random valid HTML name: letter start, base36 tail: nothing meaningful. */
 function campoSelloAzar(): string {
   const letras = 'abcdefghijklmnopqrstuvwxyz';
   let resto = '';

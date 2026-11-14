@@ -1,5 +1,5 @@
 // Default rule pack, tuned for Spanish-language contact forms (the patterns
-// match Spanish spam; the descriptions are English — Spanish translations live
+// match Spanish spam; the descriptions are English: Spanish translations live
 // in strings-es.ts under `rule.<id>`). Built to BOOTSTRAP (cold model): the
 // rules carry the weight while the bayes has no corpus. The site owner should
 // edit this pack for THEIR site.

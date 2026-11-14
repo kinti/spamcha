@@ -1,4 +1,4 @@
-# spamcha — WordPress plugin (bridge)
+# spamcha: WordPress plugin (bridge)
 
 Minimal bridge between WordPress and your own `spamcha serve` instance.
 WordPress renders the stamp, every comment goes through your local judge,
@@ -19,17 +19,17 @@ quarantined ones land in moderation, and **the content never leaves your server*
 ## What it protects
 
 - **Comments** (out of the box): the stamp hidden fields are rendered fresh per page load
-  (stamps are single-use — never cached across visitors), every comment is judged via
-  `preprocess_comment` — `reject` → 403 page, `quarantine` → held for moderation (review both in WP
+  (stamps are single-use: never cached across visitors), every comment is judged via
+  `preprocess_comment`: `reject` → 403 page, `quarantine` → held for moderation (review both in WP
   and in the spamcha panel; marking garbage in the panel trains your local judge).
-- **Any form you own**: call `spamcha_verdict( $fields )` — returns the full verdict array
+- **Any form you own**: call `spamcha_verdict( $fields )`: returns the full verdict array
   (`['decision' => 'pass|quarantine|reject', 'reasons' => …]`).
 
 ## Honest limits
 
-- Fail-open: if the service is down, comments pass (never block real people on our own outage — the
+- Fail-open: if the service is down, comments pass (never block real people on our own outage: the
   settings page shows the service status so you notice).
 - Real-traffic corpus: enable `autoHam` on the service only after the rules+feeds catch most incoming
-  slop — weak-training unknown spam as ham poisons the corpus (audit finding, fixed 0.10.0).
+  slop: weak-training unknown spam as ham poisons the corpus (audit finding, fixed 0.10.0).
 - Form-builder forms (Elementor/CF7/Divi) need their own hook wiring via `spamcha_verdict()`.
-- The stamp transient is cached for 10 minutes; stamps live 30 — comfortable margins.
+- The stamp transient is cached for 10 minutes; stamps live 30: comfortable margins.

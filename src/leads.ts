@@ -1,4 +1,4 @@
-// Leads: a confirmed submission isn't just "not spam" — it's a VERIFIED lead.
+// Leads: a confirmed submission isn't just "not spam": it's a VERIFIED lead.
 // The sender filled the form, passed the behavior gates, was flagged by the
 // judge, received the confirmation link and CLICKED it: mailbox verified,
 // intent demonstrated. This module turns confirmed entries into structured
@@ -12,7 +12,7 @@ export interface Lead {
   mensaje: string;
   recibido: string;
   confirmado: string;
-  /** Seconds between submission and confirmation — fast = engaged. */
+  /** Seconds between submission and confirmation: fast = engaged. */
   segundosParaConfirmar: number | null;
   /** Original judge probability (lower + confirmed = was a gray-zone save). */
   probabilidad: number;

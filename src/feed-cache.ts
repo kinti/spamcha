@@ -1,4 +1,4 @@
-// Cached feed loader, shared by the guard and the CLI (node:fs — this module
+// Cached feed loader, shared by the guard and the CLI (node:fs: this module
 // is server-only). Signature verification happened at `feed update` download
 // time against the pinned key; here we only re-check expiry, synchronously.
 

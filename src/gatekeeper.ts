@@ -1,12 +1,12 @@
 // The gatekeeper: the full pipeline for one form submission.
 // GATES (any failure → instant reject, nothing else runs):
 //   0. web-bot-auth (EXPERIMENTAL, optional): a request signed by a known AI
-//      agent skips the stamp gates — content still gets judged.
+//      agent skips the stamp gates: content still gets judged.
 //   1. signed, unexpired stamp (HMAC + server clock)
 //   2. time floor: issued→received ≥ minAge (unfakeable)
 //   3. honeypot present and empty (its absence = POST without rendering)
 // Past the gates, the judge (rules + bayes) reads the content.
-// It accepts EVERY field of the form as they arrive — that's the point: a
+// It accepts EVERY field of the form as they arrive: that's the point: a
 // middleware hands it the body and it just works.
 
 import type { BayesModel } from './bayes.js';
@@ -36,7 +36,7 @@ export interface GatekeeperOptions extends JudgeOptions {
   now?: number;
   /**
    * web-bot-auth (EXPERIMENTAL, draft-ietf-webbotauth): a request carrying a
-   * valid agent signature skips the stamp gates — the judge still reads the
+   * valid agent signature skips the stamp gates: the judge still reads the
    * content. `authority` defaults to the request's Host header.
    */
   webBotAuth?: { authority?: string; maxAgeSeconds?: number; fetchDirectory?: (url: string) => Promise<unknown> };
@@ -56,7 +56,7 @@ export interface SubmissionVerdict extends Verdict {
 }
 
 export interface VerifySubmissionMeta {
-  /** Request headers (lowercased, as Node provides them) — for web-bot-auth. */
+  /** Request headers (lowercased, as Node provides them): for web-bot-auth. */
   headers?: Record<string, string>;
 }
 
@@ -88,7 +88,7 @@ export async function verifySubmission(
   });
 
   // Gate 0 (EXPERIMENTAL): web-bot-auth. A request signed by a known AI agent
-  // proves its operator — the stamp gates exist to make agents prove exactly
+  // proves its operator: the stamp gates exist to make agents prove exactly
   // that, so a valid signature replaces them. The judge still scores content.
   if (options.webBotAuth) {
     const headers: WebBotAuthHeaders = {
@@ -121,7 +121,7 @@ export async function verifySubmission(
     if (!stampCheck.ok) {
       return quickReject({ code: stampCheck.reason, text: voice(stampCheck.reason) });
     }
-    // Gate 2½: replay. The nonce is random but reusable until the stamp expires —
+    // Gate 2½: replay. The nonce is random but reusable until the stamp expires:
     // a replay cache turns the stamp into single-use while it lives.
     if (options.replayCache) {
       const nonce = stampCheck.payload.n;

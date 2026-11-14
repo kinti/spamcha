@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.11.0 — leads verificados: la cuarentena sin humanos
+## 0.11.0: leads verificados: la cuarentena sin humanos
 - FIX seguridad: /verdict ya no acepta un reloj del cliente (bypass del suelo de tiempo).
 - Doble opt-in: los envíos retenidos llevan un token de confirmación firmado;
   el remitente confirma con un clic (el sitio pone el enlace) → el mensaje se
@@ -9,68 +9,68 @@
 - No confirmado en 7 días → barrido como presunto spam, borrado SIN entrenar
   (el ruido de entregabilidad hace de la no-respuesta una señal débil).
 - Confirmar entrega SIN entrenar ham: un spammer con buzón monitorizado
-  confirmaría — el juicio de ham queda en clics del operador (opcionales).
+  confirmaría: el juicio de ham queda en clics del operador (opcionales).
 - autoHam ahora opt-in (off por defecto).
 - Panel: sección "Leads verificados" con mailto; serve: /leads.json y /leads.csv
   para exportar la cartera; GET /confirm público (el token es la auth).
-## 0.10.0 — fiabilidad: hallazgos de la auditoría externa aplicados
+## 0.10.0: fiabilidad: hallazgos de la auditoría externa aplicados
 - FIX regression: the convinced-bayes quarantine floor now applies at ANY corpus
-  size (it vanished at the trained boundary — learning more degraded protection).
+  size (it vanished at the trained boundary: learning more degraded protection).
 - FIX WordPress bridge: passes the submitted stamp + honeypot through (it
   fabricated both, so every real comment would be rejected), fresh stamp per
   render (no 10-min shared token against single-use stamps), commenter IP
   forwarded for rate limiting. php -l clean.
 - autoHam is now opt-in (off by default): day-0 unknown spam can pass, and
   weak-training it as ham poisons the corpus.
-- SEC: /verdict no longer accepts a client-provided clock (`now`) — the time
+- SEC: /verdict no longer accepts a client-provided clock (`now`): the time
   floor can't be bypassed from the request body.
 - README claims qualified: ALTCHA Sentinel ships self-hosted content
   classification (commercial); the 3 s floor stops automation-simple
   submissions, it doesn't prove humanity; observation mode on the roadmap.
-## 0.9.4 — the mutant zoo
+## 0.9.4: the mutant zoo
 - `test/mutantes.test.ts`: a zoo of attacker strategies (raw POSTs, render-flash,
   honeypot-fillers, replay bursts, field-guessers, polished guest-posting,
   template spam) run on day 0 and after feedback. Scoreboard in the suite.
 
-## 0.9.3 — the learning loop, measured
+## 0.9.3: the learning loop, measured
 - Green-phase booster: a small but convinced bayes quarantines novel families
   (`bayes-arranque`).
-- `autoHam`: clean passes weak-train ham automatically — the corpus builds itself.
+- `autoHam`: clean passes weak-train ham automatically: the corpus builds itself.
 - Measured learning curve documented in both READMEs (0/6 → 6/6 after 3 marks, 0 FP).
 - Corrected an overclaimed "one click teaches" to the measured reality.
 
-## 0.9.2 — stealth names
+## 0.9.2: stealth names
 - Per-site random field names (`spamcha.config.json`): no fingerprints in your HTML.
 - Plausible honeypot names from a pool; `--no-stealth` keeps classic names.
 
-## 0.9.1 — security hardening
+## 0.9.1: security hardening
 - Single-use stamps (replay cache), body/field size caps, feed ReDoS guard,
   SSRF https-only agent, CSRF origin check on mutations, private files 0600,
   trust-proxy opt-in.
 
-## 0.9.0 — serve + WordPress + web-bot-auth + Docker
+## 0.9.0: serve + WordPress + web-bot-auth + Docker
 - `spamcha serve`: local verdict HTTP service (PHP/Python/anything).
 - WordPress bridge plugin (comment protection + `spamcha_verdict()`).
 - web-bot-auth verifier (EXPERIMENTAL, Ed25519 @authority profile).
 - Dockerfile; landing page; npm package contents finalized.
 
-## 0.8.0 — the panel + installable guard
+## 0.8.0: the panel + installable guard
 - `createGatekeeper` factory: model, quarantine, rate limiter, stamps in one object.
 - `middlewareExpress` / `middlewareHono`; panelHtml (what arrived, review buttons).
 - Quarantine store + `resolveQuarantine` feedback loop; autoHam.
 
-## 0.7.0 — born in English
+## 0.7.0: born in English
 - English-first API, CLI and pack descriptions; Spanish ships as a first-class
   locale (`--locale es`). Immutable verdict codes.
 
-## 0.6.0 — feeds: the shared bloodstream
+## 0.6.0: feeds: the shared bloodstream
 - Signed Ed25519 feed channels (OpenWRT-style): keygen/sign/add/list/update;
   merge into the judge with traceable `feed:<channel>:<id>` reason codes.
 
-## 0.5.0 — the full pipeline
+## 0.5.0: the full pipeline
 - HMAC-SHA256 render stamp with unfakeable server-side time floor; honeypot
   gate; ALTCHA solution adapter; gatekeeper pipeline.
 
-## 0.3.0 — the judge
+## 0.3.0: the judge
 - Graham-style Bayesian classifier + declarative rule packs, gradual fusion,
   dual-locale, CLI (init/train/eval/judge), zero runtime dependencies.

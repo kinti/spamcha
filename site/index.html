@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>spamcha — the invisible, trainable, local antispam for web forms</title>
+<title>spamcha: the invisible, trainable, local antispam for web forms</title>
 <meta name="description" content="spamcha: no captcha, no human tests, no cloud. A signed stamp, three invisible gates and a local judge that learns your site's spam. MIT, zero runtime dependencies.">
 <style>
   :root{--ok:#067d17;--warn:#b58600;--bad:#da1e28;--ink:#161616;--soft:#555}
@@ -32,7 +32,7 @@
 
 <h1>spam<span class="cha">cha</span></h1>
 <p class="tag">The invisible antispam for web forms: <b>no captcha, no human tests, no cloud</b>.
-A signed stamp, three invisible gates, and a judge that reads the content — and learns what <i>your</i> site receives.</p>
+A signed stamp, three invisible gates, and a judge that reads the content: and learns what <i>your</i> site receives.</p>
 
 <pre>humano → form → invisible stamp → gates → judge → <span class="pass">✓ inbox</span>
 bot    → form → (no stamp | slop)        → judge → <span class="quarantine">⚠ quarantine</span> / <span class="reject">✗ trash</span></pre>
@@ -41,17 +41,17 @@ bot    → form → (no stamp | slop)        → judge → <span class="quaranti
 
 <h2>Why</h2>
 <p>Proof-of-work captchas (ALTCHA, Cap) stop cheap bots but don't read anything.
-Cloud judges (Akismet, CleanTalk…) read your visitors' words — and ship them to someone else's servers.
+Cloud judges (Akismet, CleanTalk…) read your visitors' words: and ship them to someone else's servers.
 spamcha judges content <b>on your box</b>: it never phones home, never trains on your data in someone else's cloud,
 and never makes a human prove they're human.</p>
 
 <h2>How it works</h2>
 <div class="flow">render → server signs a <b>stamp</b> (HMAC-SHA256, 30 min TTL)
-submit → ① stamp valid?   ② ≥3 s since render (server clock — unfakeable)
+submit → ① stamp valid?   ② ≥3 s since render (server clock: unfakeable)
          ③ honeypot empty?  → then the <b>judge</b> reads the text:
          rules you can edit + a Bayesian learner trained by <i>your</i> "this was garbage" clicks</div>
 <div class="grid">
-  <div class="card"><b>🔒 Stamp</b>HMAC-signed render token. A POST without one never rendered your page — rejected with zero spam knowledge.</div>
+  <div class="card"><b>🔒 Stamp</b>HMAC-signed render token. A POST without one never rendered your page: rejected with zero spam knowledge.</div>
   <div class="card"><b>⏱ Time floor</b>The issue time lives inside the signature. Three seconds of life or less = not typed by a human.</div>
   <div class="card"><b>🍯 Honeypot</b>A hidden field must exist and stay empty. Missing = nobody rendered your HTML.</div>
   <div class="card"><b>🧠 Judge</b>Editable rule pack + per-site Bayesian learner (Graham-style). It reads, explains, and improves from your clicks.</div>
@@ -59,7 +59,7 @@ submit → ① stamp valid?   ② ≥3 s since render (server clock — unfakeab
 
 <h2>Three verdicts, never a lost customer</h2>
 <p><span class="pill pass">pass</span> processed normally ·
-<span class="pill quarantine">quarantine</span> held for your one-click review — a real person is recovered, not bounced ·
+<span class="pill quarantine">quarantine</span> held for your one-click review: a real person is recovered, not bounced ·
 <span class="pill reject">reject</span> silently dropped.
 Cold start works from minute zero (rules carry it); every verdict explains itself with immutable codes.</p>
 
@@ -72,7 +72,7 @@ const guard = createGatekeeper({ secret, modelPath: "./spamcha.json",
                                  logPath: "./spamcha-log.jsonl" });
 app.post("/contacto", middlewareExpress(guard), handler);
 app.get("/panel",     (req, res) => res.send(panelHtml(guard)));</pre>
-<h3>Anything else (PHP, Python, WordPress…) — your own local service</h3>
+<h3>Anything else (PHP, Python, WordPress…): your own local service</h3>
 <pre>spamcha serve --port 8788          # or: docker run spamcha
 # your backend: POST http://127.0.0.1:8788/verdict  →  {decision, reasons…}</pre>
 <p>A WordPress bridge plugin ships in the repo (<code class="inline">integrations/wordpress/</code>).</p>
@@ -83,7 +83,7 @@ app.get("/panel",     (req, res) => res.send(panelHtml(guard)));</pre>
 deliver curated rules to every site. <code class="inline">spamcha feed update</code> in your cron.</p>
 
 <h2>Public engine, private intelligence</h2>
-<p>The engine is MIT and auditable — that's the point. What never goes public:
+<p>The engine is MIT and auditable: that's the point. What never goes public:
 your corpus, your trained model, your verdict log. Kerckhoffs said it first:
 the lock can sit in the shop window; the key and what your doorman learned cannot be copied.</p>
 
@@ -100,7 +100,7 @@ the lock can sit in the shop window; the key and what your doorman learned canno
 ⚖️ MIT
 </p>
 
-<footer>spamcha — built as the missing layer of a no-human-verification antispam stack. Your content never leaves your server.</footer>
+<footer>spamcha: built as the missing layer of a no-human-verification antispam stack. Your content never leaves your server.</footer>
 
 </body>
 </html>

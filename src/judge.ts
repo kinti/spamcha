@@ -97,12 +97,12 @@ export function judge(
 
   // Green-phase booster: a small but CONVINCED bayes quarantines even without
   // rules (novel spam family: 2-3 marked examples + the site's own ham history
-  // already present). Quarantine is reviewable — a false positive costs one
+  // already present). Quarantine is reviewable: a false positive costs one
   // click; a false negative costs another month of the same slop in the inbox.
   // El suelo del bayes convencido aplica en TODAS las fases: con 4 documentos o
   // con 4.000, si el clasificador está convencido (p ≥ floor) y las reglas no
   // alcanzaron cuarentena, el envío se retiene para revisión. Sin este suelo,
-  // aprender (salir de fase verde) DEGRADABA la protección — la regresión que
+  // aprender (salir de fase verde) DEGRADABA la protección: la regresión que
   // la revisión externa reprodujo con la tabla 4/5/50 documentos.
   const convincedFloor = options.greenQuarantine ?? 0.9;
   let boosted = false;

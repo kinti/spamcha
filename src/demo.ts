@@ -32,7 +32,7 @@ console.log(`Log: ${LOG_PATH} (${guard.log?.list().length ?? 0} submissions)`);
 const PAGE = (body: string): string => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>spamcha — demo</title>
+<title>spamcha: demo</title>
 <style>
   body{font-family:system-ui,sans-serif;max-width:680px;margin:2rem auto;padding:0 1rem;line-height:1.5}
   form{border:1px solid #ccc;border-radius:8px;padding:1rem;margin:1rem 0}
@@ -46,7 +46,7 @@ const PAGE = (body: string): string => `<!doctype html>
   .row button{margin-right:.5rem}
   nav a{margin-right:1rem}
 </style></head><body>
-<h1>spamcha — local spam judge</h1>
+<h1>spamcha: local spam judge</h1>
 <nav><a href="/">Form</a> · <a href="/panel">Panel</a> · <a href="/revision">Review (${guard.listQuarantine().length})</a></nav>
 ${body}
 </body></html>`;

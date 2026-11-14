@@ -1,8 +1,8 @@
-// EL ZOOLÓGICO DE MUTANTES — nos probamos a los bestia.
+// EL ZOOLÓGICO DE MUTANTES: nos probamos a los bestia.
 // Cada mutante es una estrategia de evasión real. El zoológico corre contra un
 // guard sin entrenar (día 0) y otra vez tras el clic del dueño, e imprime el
 // marcador: quién muere, en qué capa, y quién escapa (los escapes del día 0
-// son HONESTOS — son exactamente los que el bucle de aprendizaje existe para
+// son HONESTOS: son exactamente los que el bucle de aprendizaje existe para
 // matar; aquí se demuestra que el clic los mata).
 //
 // autoHam está APAGADO en el zoológico a propósito: aquí el feedback es manual
@@ -121,7 +121,7 @@ const bestias: Bestia[] = [
         },
         { ip: '9.1.0.6', now: despues(4_000) },
       );
-      return { decision: v.decision, capa: v.decision === 'pass' ? 'ESCAPA día 0 — el clic lo mata' : 'bayes-arranque' };
+      return { decision: v.decision, capa: v.decision === 'pass' ? 'ESCAPA día 0: el clic lo mata' : 'bayes-arranque' };
     },
   },
   {
@@ -156,9 +156,9 @@ const bestias: Bestia[] = [
   },
 ];
 
-describe('zoológico de mutantes — día 0 (sin corpus)', () => {
+describe('zoológico de mutantes: día 0 (sin corpus)', () => {
   for (const bestia of bestias) {
-    it(`${bestia.nombre} — ${bestia.estrategia}`, async () => {
+    it(`${bestia.nombre}: ${bestia.estrategia}`, async () => {
       const r = await bestia.resultado();
       if (bestia.esperado === 'pass-dia0') {
         expect(r.decision).toBe('pass');
@@ -171,7 +171,7 @@ describe('zoológico de mutantes — día 0 (sin corpus)', () => {
   }
 });
 
-describe('zoológico — día 1+: el clic del dueño contra los escapistas', () => {
+describe('zoológico: día 1+: el clic del dueño contra los escapistas', () => {
   it('M6 tras 3 marcas: la familia entera cae (booster verde), sin falsos positivos', async () => {
     // el tráfico real del día construye el lado ham automáticamente
     for (const h of [

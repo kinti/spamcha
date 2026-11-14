@@ -4,7 +4,7 @@
 //
 // The time floor lives HERE and is unfakeable: the issue timestamp is INSIDE
 // the signature, so the server compares against its own clock on arrival.
-// A bot that solves in 2 seconds stands naked with zero client cooperation —
+// A bot that solves in 2 seconds stands naked with zero client cooperation:
 // which is exactly how real spam works (POST straight at the handler).
 
 import { toBase64Url, randomBase64Url, constantTimeEquals, fromBase64, hmacHex } from './crypto.js';

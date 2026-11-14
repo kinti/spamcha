@@ -1,5 +1,5 @@
 // Per-key rate limiter: sliding window in memory, zero dependencies.
-// Enough for a site's own contact endpoint — the goal is that a bot can't
+// Enough for a site's own contact endpoint: the goal is that a bot can't
 // hammer the judge thousands of times, not DDoS protection (that lives upstream).
 
 export interface RateLimitOptions {

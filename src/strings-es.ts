@@ -1,4 +1,4 @@
-// TRANSLATED string pack: Spanish. spamcha is born in English — this pack is
+// TRANSLATED string pack: Spanish. spamcha is born in English: this pack is
 // the Spanish voice (--locale es / SPAMCHA_LOCALE=es). Codes are screws: they
 // never get translated. Resolution priority: the site pack's own text → locale
 // pack → code.
@@ -6,7 +6,7 @@
 export const stringsEs: Record<string, string> = {
   // CLI
   'cli.help':
-    'spamcha — juez de spam local para formularios\n' +
+    'spamcha: juez de spam local para formularios\n' +
     'Uso:\n' +
     '  spamcha init [--dir D]                    modelo vacío + reglas por defecto en D\n' +
     '  spamcha train --model R [--spam DIR] [--ham DIR]\n' +
@@ -39,12 +39,12 @@ export const stringsEs: Record<string, string> = {
   'cli.feed.empty': 'Sin canales suscritos. Añade uno: spamcha feed add --name oficial-es --url …',
   'cli.feed.updated-caducado': '{nombre}: CADUCADO, omitido (caducó {expiresAt})',
   'cli.feed.unchanged': '{nombre}: sin cambios (versión {version})',
-  'cli.feed.bad-signature': '{nombre}: FIRMA INVÁLIDA — canal rechazado (¿clave equivocada o archivo manipulado?)',
+  'cli.feed.bad-signature': '{nombre}: FIRMA INVÁLIDA: canal rechazado (¿clave equivocada o archivo manipulado?)',
   'cli.feed.skipped-expired': 'Feed caducado omitido: {channel}',
-  'cli.feed.http': '{nombre}: la URL del canal respondió HTTP {status} — omitido',
-  'cli.feed.unsigned-warning': '⚠ {nombre}: canal aceptado SIN clave fijada — feed update no verificará su firma',
+  'cli.feed.http': '{nombre}: la URL del canal respondió HTTP {status}: omitido',
+  'cli.feed.unsigned-warning': '⚠ {nombre}: canal aceptado SIN clave fijada: feed update no verificará su firma',
   'cli.feed.help':
-    'Feeds — canales de inteligencia firmados:\n' +
+    'Feeds: canales de inteligencia firmados:\n' +
     '  spamcha feed keygen --private k.b64 --public k.pub.b64\n' +
     '  spamcha feed sign --file feed.json --private k.b64\n' +
     '  spamcha feed add --name N --url URL [--public k.pub.b64] [--config C]\n' +
@@ -53,14 +53,14 @@ export const stringsEs: Record<string, string> = {
   'cli.feed.updated': '{nombre}: versión {version} ({rules} reglas, {domains} dominios)',
 
   // Panel
-  'panel.title': 'Panel — qué ha llegado',
+  'panel.title': 'Panel: qué ha llegado',
   'panel.stats': 'Total {total} · paso {pass} · cuarentena {quarantine} · rechazo {reject} · últimas 24h: {horas24}',
   'panel.model': 'Modelo: spam={spam} ham={ham} · vocabulario {vocabulary} · fase {phase}',
   'panel.pending': 'Cuarentena pendiente: {n}',
   'panel.top-rules': 'Reglas más activas',
   'panel.top-domains': 'Dominios vistos en lo filtrado',
   'panel.none': 'Todavía nada.',
-  'panel.quarantine-title': 'Cuarentena — enséñale al juez',
+  'panel.quarantine-title': 'Cuarentena: enséñale al juez',
   'panel.quarantine-empty': 'Cuarentena vacía.',
   'panel.btn-spam': '🗑 Es basura (entrenar spam)',
   'panel.btn-ham': '✓ Es legítimo (entrenar ham)',
@@ -97,7 +97,7 @@ export const stringsEs: Record<string, string> = {
   'wba:unknown-agent': 'Agente de firma desconocido (directorio inalcanzable)',
 
   // SPANISH descriptions of the default pack's rules (rules-default.ts carries
-  // the English ones — site-editable data).
+  // the English ones: site-editable data).
   'rule.spam-words': 'Palabras típicas de spam',
   'rule.spam-words-heavy': 'Lluvia de palabras típicas de spam',
   'rule.many-links': 'Más de 5 enlaces en el envío',

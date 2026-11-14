@@ -2,7 +2,7 @@
 // signed JSON files at a URL, pulled with `spamcha feed update`, verified
 // against a locally-pinned Ed25519 public key, merged into the judge's pack.
 //
-// What travels: curated RULES and spam LINK DOMAINS — knowledge of the guild,
+// What travels: curated RULES and spam LINK DOMAINS: knowledge of the guild,
 // never user data, never bayes counts, never content. That's the line between
 // "local learning" and "isolated learning" (see README, what goes public).
 
@@ -15,7 +15,7 @@ export interface FeedChannel {
   /** Monotonic: receivers ignore anything not newer than what they have. */
   version: number;
   updatedAt: string;
-  /** Feeds expire on purpose — stale intel poisons judges. */
+  /** Feeds expire on purpose: stale intel poisons judges. */
   expiresAt: string;
   description?: string;
   /** Curated rules; ids get the `feed:<channel>:` prefix on merge. */
@@ -107,7 +107,7 @@ export async function verifyFeed(
 
 const DOMAINS_WEIGHT = 5; // a curated domain quarantines alone (reviewable, never auto-reject)
 // A feed channel is EXTERNAL input even when signed: sanitize everything.
-// Defense in depth — the signature authenticates the producer, not their care.
+// Defense in depth: the signature authenticates the producer, not their care.
 const MAX_RULES_PER_CHANNEL = 100;
 const MAX_PATTERN_LENGTH = 500;
 const MAX_WEIGHT = 6;

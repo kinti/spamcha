@@ -80,7 +80,7 @@ describe('spamcha serve', () => {
   it('/panel renders the page', async () => {
     const res = await fetch(`${BASE}/panel`);
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain('Panel — what arrived');
+    expect(await res.text()).toContain('Panel: what arrived');
   });
 
   it('/feeds lists channels in force', async () => {
